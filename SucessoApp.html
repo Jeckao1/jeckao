@@ -83,6 +83,15 @@
   .summary-stat{ padding:10px; border:1px solid var(--line-soft); border-radius:8px; background:rgba(255,255,255,0.025); }
   .summary-stat strong{ display:block; color:var(--cyan); font:700 1.15rem 'Rajdhani',sans-serif; }
   .summary-stat span{ color:var(--dim); font-size:0.68rem; }
+  .client-report-stat{ width:100%; text-align:left; cursor:pointer; transition:border-color .15s, background .15s; }
+  .client-report-stat:hover,.client-report-stat:focus-visible{ border-color:var(--cyan); background:rgba(53,230,255,0.07); }
+  .client-report-modal-box{ max-width:620px; }
+  .client-report-list{ display:flex; flex-direction:column; gap:7px; margin-top:14px; }
+  .client-report-list-item{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:10px 12px; text-align:left; background:rgba(255,255,255,0.025); border:1px solid var(--line-soft); border-radius:8px; }
+  .client-report-list-item:hover{ border-color:var(--cyan); background:rgba(53,230,255,0.06); }
+  .client-report-list-item strong{ display:block; font-size:0.84rem; overflow-wrap:anywhere; }
+  .client-report-list-item span{ display:block; margin-top:2px; color:var(--dim); font-size:0.7rem; }
+  .client-report-list-empty{ padding:18px 8px; color:var(--dim); text-align:center; font-size:0.82rem; }
   .btn-ghost{
     padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel);
     font-family:'Rajdhani',sans-serif; font-weight:600; font-size:0.78rem; letter-spacing:0.02em; color:var(--dim);
@@ -609,6 +618,16 @@
     <h2>Ficha da Cliente</h2>
     <div id="client-info-content" class="my-4 text-left space-y-2"></div>
     <div class="modal-actions"><button id="btn-client-info-close" type="button" class="btn-submit" style="flex:1;">Fechar</button></div>
+  </div>
+</div>
+
+<div id="client-report-modal" class="modal-overlay">
+  <div class="modal-box client-report-modal-box">
+    <h2 id="client-report-modal-title">Clientes</h2>
+    <div id="client-report-modal-list" class="client-report-list"></div>
+    <div class="modal-actions">
+      <button id="btn-client-report-close" type="button" class="btn-submit" style="flex:1;">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -1544,7 +1563,9 @@
      "notebook-format-bold","notebook-format-size","notebook-format-color",
      "btn-notebook-save-note","btn-notebook-cancel-edit","notebook-notes","notebook-empty-notes",
      "client-search-input","client-category-select","btn-new-category",
-     "client-info-modal","client-info-content","btn-client-info-close","plant-history-modal","plant-history-title","plant-history-content","btn-plant-history-close","card-color-input",
+     "client-info-modal","client-info-content","btn-client-info-close",
+     "client-report-modal","client-report-modal-title","client-report-modal-list","btn-client-report-close",
+     "plant-history-modal","plant-history-title","plant-history-content","btn-plant-history-close","card-color-input",
      "clients-col-left","clients-col-right",
      "category-modal","category-modal-title","new-category-name","btn-category-cancel","btn-category-save",
      "category-tabs-bar","category-manager-content","cat-manager-count",
@@ -2917,6 +2938,7 @@
       el["calendar-modal"].classList.remove("show");
       el["confirm-modal"].classList.remove("show"); confirmCallback = null;
       el["client-info-modal"].classList.remove("show");
+      el["client-report-modal"].classList.remove("show");
       el["category-modal"].classList.remove("show");
       el["cat-settings-dropdown"].classList.remove("show");
       el["backup-modal"].classList.remove("show");
@@ -5184,18 +5206,21 @@
       return client.deliveryCompleted !== true && delivery && delivery >= today && delivery <= nextWeek;
     }).length;
     var stats = [
-      { value:state.clients.length, label:"Clientes cadastradas" },
-      { value:state.clients.filter(function(client){ return client.rating === "favorito"; }).length, label:"Favoritas" },
-      { value:state.clients.filter(function(client){ return (client.category || "").toLocaleLowerCase("pt-BR") === "recorrente"; }).length, label:"Marcadas como recorrentes" },
-      { value:upcomingDeliveries, label:"Entregas nos próximos 7 dias" }
+      { key:"all", value:state.clients.length, label:"Clientes cadastradas" },
+      { key:"favorites", value:state.clients.filter(function(client){ return client.rating === "favorito"; }).length, label:"Favoritas" },
+      { key:"recurring", value:state.clients.filter(function(client){ return (client.category || "").toLocaleLowerCase("pt-BR") === "recorrente"; }).length, label:"Marcadas como recorrentes" },
+      { key:"deliveries", value:upcomingDeliveries, label:"Entregas nos próximos 7 dias" }
     ];
     el["client-report-stats"].innerHTML = "";
     stats.forEach(function(stat){
-      var item = document.createElement("div");
-      item.className = "summary-stat";
+      var item = document.createElement("button");
+      item.type = "button";
+      item.className = "summary-stat client-report-stat";
+      item.setAttribute("aria-label", stat.label + ": " + stat.value + ". Abrir lista.");
       item.innerHTML = "<strong></strong><span></span>";
       item.querySelector("strong").textContent = stat.value;
       item.querySelector("span").textContent = stat.label;
+      item.addEventListener("click", function(){ openClientReport(stat.key); });
       el["client-report-stats"].appendChild(item);
     });
     var categoryContainer = el["client-report-categories"];
@@ -5212,6 +5237,65 @@
       categoryContainer.appendChild(row);
     });
   }
+
+  function openClientReport(reportType){
+    var titles = {
+      all:"Todos os clientes cadastrados",
+      favorites:"Clientes favoritas",
+      recurring:"Clientes recorrentes",
+      deliveries:"Entregas nos próximos 7 dias"
+    };
+    var filtered = state.clients.filter(function(client){
+      if(reportType === "favorites") return client.rating === "favorito";
+      if(reportType === "recurring") return (client.category || "").toLocaleLowerCase("pt-BR") === "recorrente";
+      if(reportType === "deliveries"){
+        var delivery = parseLocalIsoDate(client.deliveryDate);
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        var nextWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate()+7);
+        return client.deliveryCompleted !== true && delivery && delivery >= today && delivery <= nextWeek;
+      }
+      return true;
+    });
+    el["client-report-modal-title"].textContent = titles[reportType] || "Clientes";
+    var list = el["client-report-modal-list"];
+    list.innerHTML = "";
+    if(!filtered.length){
+      var empty = document.createElement("p");
+      empty.className = "client-report-list-empty";
+      empty.textContent = "Não há clientes nesta categoria no momento.";
+      list.appendChild(empty);
+    } else {
+      filtered.forEach(function(client){
+        var item = document.createElement("button");
+        item.type = "button";
+        item.className = "client-report-list-item";
+        var details = document.createElement("div");
+        var name = document.createElement("strong");
+        name.textContent = client.name || "Cliente sem nome";
+        var subtitle = document.createElement("span");
+        subtitle.textContent = reportType === "deliveries"
+          ? "Entrega: " + formatBirthdayDisplay(client.deliveryDate)
+          : (client.category || "Geral") + (client.phone ? " · " + client.phone : "");
+        details.appendChild(name);
+        details.appendChild(subtitle);
+        item.appendChild(details);
+        item.addEventListener("click", function(){
+          el["client-report-modal"].classList.remove("show");
+          showClientCardModal(client);
+        });
+        list.appendChild(item);
+      });
+    }
+    el["client-report-modal"].classList.add("show");
+  }
+
+  el["btn-client-report-close"].addEventListener("click", function(){
+    el["client-report-modal"].classList.remove("show");
+  });
+  el["client-report-modal"].addEventListener("click", function(event){
+    if(event.target === el["client-report-modal"]) el["client-report-modal"].classList.remove("show");
+  });
 
   function renderClientsTab(){
     renderCategoryDropdown();
