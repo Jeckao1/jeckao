@@ -66,8 +66,16 @@
   .global-search-result:hover{ background:rgba(53,230,255,0.08); }
   .global-search-result strong{ color:var(--text); font-size:0.82rem; }
   .global-search-result span,.global-search-empty{ color:var(--dim); font-size:0.7rem; }
-  .dashboard-extras{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
-  @media(max-width:760px){ .dashboard-extras{ grid-template-columns:1fr; } }
+  .dashboard-extras{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; margin-bottom:20px; align-items:start; }
+  .dashboard-widget{ grid-column:span var(--dashboard-width, 4); min-width:0; height:var(--dashboard-height, 320px); overflow:auto; align-self:start; }
+  .dashboard-widget.dragging{ opacity:0.4; }
+  .dashboard-widget-controls{ display:flex; align-items:center; justify-content:flex-end; gap:4px; margin-left:auto; }
+  .dashboard-widget-controls button{ min-width:27px; height:25px; padding:0 5px; border:1px solid var(--line); border-radius:5px; color:var(--dim); font-size:0.66rem; white-space:nowrap; }
+  .dashboard-widget-controls button:hover{ color:var(--cyan); border-color:var(--cyan); }
+  .dashboard-widget-drag{ cursor:grab; touch-action:none; user-select:none; }
+  .dashboard-widget-drag:active{ cursor:grabbing; }
+  @media(max-width:1000px){ .dashboard-widget{ grid-column:span 6 !important; } }
+  @media(max-width:700px){ .dashboard-widget{ grid-column:span 12 !important; } .dashboard-widget-controls{ flex-wrap:wrap; } }
   .dashboard-extra-list{ display:flex; flex-direction:column; gap:6px; max-height:245px; overflow:auto; }
   .dashboard-extra-item{ display:flex; align-items:center; justify-content:space-between; width:100%; gap:10px; padding:7px 9px; background:rgba(255,255,255,0.025); border:1px solid var(--line-soft); border-radius:7px; text-align:left; }
   .dashboard-extra-item:hover{ border-color:var(--cyan); }
@@ -747,13 +755,17 @@
     </div>
 
     <div class="dashboard-extras">
-      <section class="card">
+      <section class="card dashboard-widget" data-dashboard-widget="summary">
         <div class="card-head"><h2>📊 Resumo dos últimos 7 dias</h2></div>
         <div id="weekly-summary" class="weekly-summary-stats"></div>
       </section>
-      <section class="card">
+      <section class="card dashboard-widget" data-dashboard-widget="agenda">
         <div class="card-head"><h2>⏰ Agenda próxima</h2></div>
         <div id="upcoming-reminders" class="dashboard-extra-list"></div>
+      </section>
+      <section class="card dashboard-widget" data-dashboard-widget="birthdays">
+        <div class="card-head"><h2>🎂 Próximos aniversários</h2></div>
+        <div id="objectives-upcoming-birthdays" class="dashboard-extra-list"></div>
       </section>
     </div>
 
@@ -1388,7 +1400,7 @@
     tasks.forEach(function(t){ t.completions = []; t.showInCalendar = true; t.confirmMode = "single"; });
     return {
       pillarsMeta: buildDefaultPillarsMeta(), pillars: pillars, tasks: tasks, history: [],
-      todos: [], diaryEntries: [], notebookFolders: [], activeNotebookFolderId: null, uiCollapsed: {}, cardOrder: null, clientsCardOrder: null, plantsCardOrder: null, activeTab: "objectives",
+      todos: [], diaryEntries: [], notebookFolders: [], activeNotebookFolderId: null, uiCollapsed: {}, cardOrder: null, clientsCardOrder: null, plantsCardOrder: null, dashboardLayout: null, activeTab: "objectives",
       board: { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", cards: [] } ] },
       uiPrefs: { font: "default", bg: null },
       boardView: "board",
@@ -1399,6 +1411,25 @@
         { id: "p2", name: "Manjericão", seasons: ["Primavera", "Verão"], lastFertilizer: "", nextFertilizer: "", fertilizerType: "NPK", desc: "Podar as flores para estimular novas folhas.", photo: null, fertilizerHistory: [] }
       ]
     };
+  }
+
+  function normalizeDashboardLayout(layout){
+    var ids = ["summary","agenda","birthdays"];
+    var defaultHeights = { summary:240, agenda:360, birthdays:360 };
+    var source = layout && typeof layout === "object" ? layout : {};
+    var order = Array.isArray(source.order) ? source.order.filter(function(id, index, items){
+      return ids.indexOf(id) !== -1 && items.indexOf(id) === index;
+    }) : [];
+    ids.forEach(function(id){ if(order.indexOf(id) === -1) order.push(id); });
+    var widths = {};
+    var heights = {};
+    ids.forEach(function(id){
+      var width = source.widths && Number(source.widths[id]);
+      var height = source.heights && Number(source.heights[id]);
+      widths[id] = isFinite(width) ? Math.max(4, Math.min(12, Math.round(width))) : 4;
+      heights[id] = isFinite(height) ? Math.max(180, Math.min(600, Math.round(height / 40) * 40)) : defaultHeights[id];
+    });
+    return { order:order, widths:widths, heights:heights };
   }
 
   function loadState(){
@@ -1435,6 +1466,7 @@
       if(typeof parsed.cardOrder === "undefined") parsed.cardOrder = null;
       if(typeof parsed.clientsCardOrder === "undefined") parsed.clientsCardOrder = null;
       if(typeof parsed.plantsCardOrder === "undefined") parsed.plantsCardOrder = null;
+      parsed.dashboardLayout = normalizeDashboardLayout(parsed.dashboardLayout);
       if(!parsed.activeTab) parsed.activeTab = "objectives";
       if(!parsed.board || !parsed.board.lists || !parsed.board.lists.length){
         parsed.board = { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", cards: [] } ] };
@@ -1534,7 +1566,7 @@
      "edit-confirm-single","edit-confirm-dual",
      "btn-edit-save","btn-edit-cancel","habit-calendar","empty-calendar",
      "storage-warning","btn-export","btn-import","save-status","backup-reminder","btn-zero-xp",
-     "global-search-input","global-search-results","weekly-summary","upcoming-reminders","client-report-stats","client-report-categories",
+     "global-search-input","global-search-results","weekly-summary","upcoming-reminders","objectives-upcoming-birthdays","client-report-stats","client-report-categories",
      "backup-modal","backup-modal-title","backup-modal-desc","backup-textarea",
      "btn-backup-copy","btn-backup-download","btn-backup-select-file","backup-file-input","btn-backup-restore","btn-backup-close",
      "pillar-modal","pillar-manage-list","new-pillar-name","new-pillar-color","pillar-form-label",
@@ -2071,11 +2103,139 @@
     renderUpcomingReminders();
   }
 
+  function applyDashboardLayout(){
+    state.dashboardLayout = normalizeDashboardLayout(state.dashboardLayout);
+    var container = document.querySelector(".dashboard-extras");
+    if(!container) return;
+    state.dashboardLayout.order.forEach(function(id){
+      var widget = container.querySelector('[data-dashboard-widget="' + id + '"]');
+      if(!widget) return;
+      widget.style.setProperty("--dashboard-width", state.dashboardLayout.widths[id]);
+      widget.style.setProperty("--dashboard-height", state.dashboardLayout.heights[id] + "px");
+      container.appendChild(widget);
+    });
+  }
+
+  function saveDashboardLayout(){
+    var container = document.querySelector(".dashboard-extras");
+    if(!container) return;
+    state.dashboardLayout.order = Array.prototype.map.call(
+      container.querySelectorAll("[data-dashboard-widget]"),
+      function(widget){ return widget.dataset.dashboardWidget; }
+    );
+    saveState();
+  }
+
+  function setupDashboardWidgets(){
+    var container = document.querySelector(".dashboard-extras");
+    if(!container) return;
+    state.dashboardLayout = normalizeDashboardLayout(state.dashboardLayout);
+    container.querySelectorAll("[data-dashboard-widget]").forEach(function(widget){
+      var id = widget.dataset.dashboardWidget;
+      var controls = document.createElement("div");
+      controls.className = "dashboard-widget-controls";
+      var drag = document.createElement("button");
+      drag.type = "button";
+      drag.className = "dashboard-widget-drag";
+      drag.textContent = "⠿";
+      drag.title = "Arraste para mover este painel";
+      drag.setAttribute("aria-label", "Arrastar painel para mover");
+      controls.appendChild(drag);
+      [
+        { action:"width-down", text:"−L", label:"Diminuir largura" },
+        { action:"width-up", text:"+L", label:"Aumentar largura" },
+        { action:"height-down", text:"−A", label:"Diminuir altura" },
+        { action:"height-up", text:"+A", label:"Aumentar altura" }
+      ].forEach(function(control){
+        var button = document.createElement("button");
+        button.type = "button";
+        button.dataset.resize = control.action;
+        button.textContent = control.text;
+        button.title = control.label + " do painel";
+        button.setAttribute("aria-label", control.label + " do painel");
+        controls.appendChild(button);
+      });
+      var header = widget.querySelector(".card-head");
+      if(header) header.appendChild(controls);
+      widget.dataset.dashboardWidget = id;
+    });
+
+    container.addEventListener("click", function(event){
+      var button = event.target.closest("[data-resize]");
+      if(!button) return;
+      var widget = button.closest("[data-dashboard-widget]");
+      var id = widget && widget.dataset.dashboardWidget;
+      if(!id) return;
+      var action = button.dataset.resize;
+      if(action === "width-down") state.dashboardLayout.widths[id] = Math.max(4, state.dashboardLayout.widths[id] - 1);
+      if(action === "width-up") state.dashboardLayout.widths[id] = Math.min(12, state.dashboardLayout.widths[id] + 1);
+      if(action === "height-down") state.dashboardLayout.heights[id] = Math.max(180, state.dashboardLayout.heights[id] - 40);
+      if(action === "height-up") state.dashboardLayout.heights[id] = Math.min(600, state.dashboardLayout.heights[id] + 40);
+      widget.style.setProperty("--dashboard-width", state.dashboardLayout.widths[id]);
+      widget.style.setProperty("--dashboard-height", state.dashboardLayout.heights[id] + "px");
+      saveState();
+    });
+
+    var dashboardPointer = null;
+    container.querySelectorAll(".dashboard-widget-drag").forEach(function(handle){
+      handle.addEventListener("pointerdown", function(event){
+        var widget = handle.closest("[data-dashboard-widget]");
+        if(!widget || event.button !== 0) return;
+        dashboardPointer = { widget:widget, pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, moved:false };
+        if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+      });
+    });
+    function moveDashboardWidgetAt(clientX, clientY){
+      var draggedWidget = dashboardPointer && dashboardPointer.widget;
+      if(!draggedWidget) return;
+      var candidates = Array.prototype.filter.call(
+        container.querySelectorAll("[data-dashboard-widget]:not(.dragging)"),
+        function(widget){ return widget !== draggedWidget; }
+      );
+      if(!candidates.length) return;
+      var nearest = null;
+      var nearestDistance = Infinity;
+      candidates.forEach(function(widget){
+        var rect = widget.getBoundingClientRect();
+        var dx = (clientX - (rect.left + rect.width / 2)) / Math.max(rect.width, 1);
+        var dy = (clientY - (rect.top + rect.height / 2)) / Math.max(rect.height, 1);
+        var distance = dx * dx + dy * dy;
+        if(distance < nearestDistance){ nearest = widget; nearestDistance = distance; }
+      });
+      var rect = nearest.getBoundingClientRect();
+      var xOffset = (clientX - (rect.left + rect.width / 2)) / Math.max(rect.width, 1);
+      var yOffset = (clientY - (rect.top + rect.height / 2)) / Math.max(rect.height, 1);
+      var insertAfter = Math.abs(xOffset) > Math.abs(yOffset) ? xOffset > 0 : yOffset > 0;
+      if(insertAfter) container.insertBefore(draggedWidget, nearest.nextSibling);
+      else container.insertBefore(draggedWidget, nearest);
+    }
+    document.addEventListener("pointermove", function(event){
+      if(!dashboardPointer || event.pointerId !== dashboardPointer.pointerId) return;
+      var distance = Math.hypot(event.clientX - dashboardPointer.startX, event.clientY - dashboardPointer.startY);
+      if(!dashboardPointer.moved && distance < 6) return;
+      dashboardPointer.moved = true;
+      dashboardPointer.widget.classList.add("dragging");
+      event.preventDefault();
+      moveDashboardWidgetAt(event.clientX, event.clientY);
+    });
+    function finishDashboardPointer(event){
+      if(!dashboardPointer || event.pointerId !== dashboardPointer.pointerId) return;
+      var moved = dashboardPointer.moved;
+      dashboardPointer.widget.classList.remove("dragging");
+      dashboardPointer = null;
+      if(moved) saveDashboardLayout();
+    }
+    document.addEventListener("pointerup", finishDashboardPointer);
+    document.addEventListener("pointercancel", finishDashboardPointer);
+    applyDashboardLayout();
+  }
+
   renderPillarPicker();
   setFormType("positive");
   setFormConfirmMode("single");
   setTodoDueMode("none");
   initChart();
+  setupDashboardWidgets();
   renderAll();
   applySavedCardOrder();
   applySavedClientsCardOrder();
@@ -3324,8 +3484,10 @@
     safeCall(renderBoard);
     safeCall(renderWeeklySummary);
     safeCall(renderUpcomingReminders);
+    safeCall(renderObjectivesUpcomingBirthdays);
     safeCall(renderBackupReminder);
     safeCall(renderGlobalSearchResults);
+    safeCall(applyDashboardLayout);
   }
 
   function renderWeeklySummary(){
@@ -3484,6 +3646,49 @@
       }
       item.appendChild(content);
       el["upcoming-reminders"].appendChild(item);
+    });
+  }
+
+  function renderObjectivesUpcomingBirthdays(){
+    var list = el["objectives-upcoming-birthdays"];
+    if(!list) return;
+    var upcoming = state.clients.map(function(client){
+      var date = client.birthday ? nextBirthdayDate(birthdayMMDD(client)) : null;
+      return date ? { client:client, date:date } : null;
+    }).filter(Boolean).sort(function(a,b){
+      return a.date - b.date || String(a.client.name || "").localeCompare(String(b.client.name || ""), "pt-BR");
+    });
+    list.innerHTML = "";
+    if(!upcoming.length){
+      list.innerHTML = '<p class="dashboard-extra-empty">Nenhum aniversário cadastrado.</p>';
+      return;
+    }
+    upcoming.slice(0,5).forEach(function(item){
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "dashboard-extra-item";
+      var content = document.createElement("div");
+      content.className = "dashboard-reminder-content";
+      var details = document.createElement("span");
+      details.style.marginTop = "0";
+      var name = document.createElement("strong");
+      name.textContent = item.client.name || "Cliente";
+      var date = document.createElement("span");
+      var days = daysUntilDate(item.date);
+      var when = days === 0 ? "hoje" : days === 1 ? "amanhã" : "em " + days + " dias";
+      date.textContent = formatUpcomingDate(item.date) + " · " + when;
+      details.appendChild(name);
+      details.appendChild(date);
+      content.appendChild(details);
+      var icon = document.createElement("span");
+      icon.textContent = "›";
+      content.appendChild(icon);
+      button.appendChild(content);
+      button.addEventListener("click", function(){
+        switchTab("clients");
+        showClientCardModal(item.client);
+      });
+      list.appendChild(button);
     });
   }
 
@@ -3649,6 +3854,7 @@
   setInterval(function(){
     renderWeeklySummary();
     renderUpcomingReminders();
+    renderObjectivesUpcomingBirthdays();
     renderBackupReminder();
   }, 60000);
 
@@ -5307,6 +5513,7 @@
     applySavedClientsCardOrder();
     renderWeeklySummary();
     renderUpcomingReminders();
+    renderObjectivesUpcomingBirthdays();
   }
 
 })();
