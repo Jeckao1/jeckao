@@ -449,6 +449,8 @@
   .client-detail-line strong{ color:var(--dim); }
   .client-detail-created{ color:var(--dim-2); font-size:0.68rem; margin-top:8px; }
   .client-details-tools{ display:flex; justify-content:flex-end; align-items:center; gap:5px; flex-wrap:wrap; margin-top:10px; }
+  .client-whatsapp-link{ display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:5px 9px; border:1px solid #25d366; border-radius:7px; color:#25d366; font-size:0.76rem; text-decoration:none; white-space:nowrap; }
+  .client-whatsapp-link:hover{ background:rgba(37,211,102,0.12); color:#25d366; }
   .client-photo-thumb{ width:38px; height:38px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid var(--line); }
   .client-photo-thumb.placeholder{ display:flex; align-items:center; justify-content:center; background:var(--void); font-size:1rem; color:var(--dim-2); }
   .client-info{ flex:1; min-width:0; }
@@ -4400,6 +4402,32 @@
     return '<span style="display:inline-block; font-size:0.68rem; font-family:\'JetBrains Mono\',monospace; padding:2px 7px; border-radius:6px; color:' + info.color + '; background:' + info.bg + '; border:1px solid ' + info.color + ';">' + info.label + '</span>';
   }
 
+  function getWhatsAppUrl(phone){
+    var digits = String(phone || "").replace(/\D/g, "");
+    if((digits.length === 11 || digits.length === 12) && digits.charAt(0) === "0"){
+      digits = digits.slice(1);
+    }
+    if(digits.length === 10 || digits.length === 11){
+      digits = "55" + digits;
+    } else if(digits.indexOf("55") !== 0 || (digits.length !== 12 && digits.length !== 13)){
+      return null;
+    }
+    return "https://wa.me/" + digits;
+  }
+
+  function createWhatsAppLink(phone, clientName){
+    var url = getWhatsAppUrl(phone);
+    if(!url) return null;
+    var link = document.createElement("a");
+    link.className = "client-whatsapp-link";
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "🟢 Abrir WhatsApp";
+    link.setAttribute("aria-label", "Abrir conversa no WhatsApp com " + (clientName || "cliente"));
+    return link;
+  }
+
   function showClientCardModal(client){
     var content = el["client-info-content"];
     var photoHtml = client.photo ? '<img src="' + client.photo + '" style="max-width:120px; border-radius:8px; border:1px solid var(--line); display:block; margin:0 auto 12px;">' : '';
@@ -4415,6 +4443,8 @@
       '<p><strong>O que comprou:</strong> ' + escapeHtml(client.purchase || "—") + '</p>' +
       '<p><strong>O que quer comprar:</strong> ' + escapeHtml(client.wantsToBuy || "—") + '</p>' +
       '<p style="font-size:0.75rem; color:var(--dim); margin-top:8px;">' + formatCreatedDisplay(client.createdAt) + '</p>';
+    var whatsappLink = createWhatsAppLink(client.phone, client.name);
+    if(whatsappLink) content.appendChild(whatsappLink);
     el["client-info-modal"].classList.add("show");
   }
   el["btn-client-info-close"].addEventListener("click", function(){ el["client-info-modal"].classList.remove("show"); });
@@ -4493,6 +4523,8 @@
       saveState();
       renderCategoryManager();
     });
+    var whatsappLink = createWhatsAppLink(client.phone, client.name);
+    if(whatsappLink) row.querySelector(".client-details-tools").prepend(whatsappLink);
     var moveBtns = row.querySelectorAll(".btn-move");
     for(var mi=0; mi<moveBtns.length; mi++){
       moveBtns[mi].addEventListener("click", function(e){
