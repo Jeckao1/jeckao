@@ -55,6 +55,34 @@
 
   .storage-warning{ background:rgba(255,178,60,0.12); border:1px solid var(--amber); color:var(--amber); border-radius:8px; padding:11px 14px; font-size:0.82rem; margin-bottom:16px; line-height:1.5; }
   .backup-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .backup-reminder{ flex-basis:100%; color:var(--amber); font-size:0.76rem; }
+  .backup-reminder button{ color:var(--cyan); text-decoration:underline; }
+  .global-search{ position:relative; margin-bottom:18px; z-index:20; }
+  .global-search input{ width:100%; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:11px 14px; color:var(--text); }
+  .global-search input:focus{ outline:none; border-color:var(--cyan); }
+  .global-search-results{ display:none; position:absolute; top:calc(100% + 5px); left:0; right:0; max-height:360px; overflow:auto; padding:6px; background:var(--panel); border:1px solid var(--line); border-radius:9px; box-shadow:0 12px 32px rgba(0,0,0,0.45); }
+  .global-search-results.show{ display:block; }
+  .global-search-result{ display:flex; flex-direction:column; width:100%; padding:8px 10px; border-radius:6px; text-align:left; }
+  .global-search-result:hover{ background:rgba(53,230,255,0.08); }
+  .global-search-result strong{ color:var(--text); font-size:0.82rem; }
+  .global-search-result span,.global-search-empty{ color:var(--dim); font-size:0.7rem; }
+  .dashboard-extras{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
+  @media(max-width:760px){ .dashboard-extras{ grid-template-columns:1fr; } }
+  .dashboard-extra-list{ display:flex; flex-direction:column; gap:6px; max-height:245px; overflow:auto; }
+  .dashboard-extra-item{ display:flex; align-items:center; justify-content:space-between; width:100%; gap:10px; padding:7px 9px; background:rgba(255,255,255,0.025); border:1px solid var(--line-soft); border-radius:7px; text-align:left; }
+  .dashboard-extra-item:hover{ border-color:var(--cyan); }
+  .dashboard-extra-item strong{ display:block; font-size:0.76rem; overflow-wrap:anywhere; }
+  .dashboard-extra-item span{ display:block; margin-top:2px; flex-shrink:0; font-size:0.68rem; color:var(--dim); }
+  .dashboard-reminder-content{ min-width:0; display:flex; flex:1; align-items:center; justify-content:space-between; gap:10px; }
+  .dashboard-reminder-open{ min-width:0; text-align:left; }
+  .dashboard-reminder-open strong{ display:block; overflow-wrap:anywhere; }
+  .dashboard-reminder-done{ flex-shrink:0; padding:5px 8px; border:1px solid var(--lime); border-radius:6px; color:var(--lime); font-size:0.66rem; white-space:nowrap; }
+  .dashboard-reminder-done:hover{ background:rgba(182,255,60,0.1); }
+  .dashboard-extra-empty{ color:var(--dim); font-size:0.78rem; padding:5px 2px; }
+  .weekly-summary-stats,.client-report-stats{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .summary-stat{ padding:10px; border:1px solid var(--line-soft); border-radius:8px; background:rgba(255,255,255,0.025); }
+  .summary-stat strong{ display:block; color:var(--cyan); font:700 1.15rem 'Rajdhani',sans-serif; }
+  .summary-stat span{ color:var(--dim); font-size:0.68rem; }
   .btn-ghost{
     padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel);
     font-family:'Rajdhani',sans-serif; font-weight:600; font-size:0.78rem; letter-spacing:0.02em; color:var(--dim);
@@ -449,6 +477,7 @@
   .client-detail-line strong{ color:var(--dim); }
   .client-detail-created{ color:var(--dim-2); font-size:0.68rem; margin-top:8px; }
   .client-details-tools{ display:flex; justify-content:flex-end; align-items:center; gap:5px; flex-wrap:wrap; margin-top:10px; }
+  .client-report-category{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; color:var(--dim); font-size:0.74rem; border-bottom:1px solid var(--line-soft); }
   .client-whatsapp-link{ display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:5px 9px; border:1px solid #25d366; border-radius:7px; color:#25d366; font-size:0.76rem; text-decoration:none; white-space:nowrap; }
   .client-whatsapp-link:hover{ background:rgba(37,211,102,0.12); color:#25d366; }
   .client-photo-thumb{ width:38px; height:38px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid var(--line); }
@@ -461,6 +490,8 @@
   .birthday-chip:hover{ background:rgba(255,178,60,0.3); }
   .delivery-chip{ background:rgba(255,61,110,0.14); border:1px solid var(--red); border-radius:5px; padding:2px 5px; font-size:0.64rem; color:var(--red); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
   .delivery-chip:hover{ background:rgba(255,61,110,0.3); }
+  .delivery-chip.completed{ background:rgba(182,255,60,0.1); border-color:var(--lime); color:var(--lime); }
+  .delivery-chip.completed:hover{ background:rgba(182,255,60,0.18); }
 
   .plants-layout{ display:grid; grid-template-columns: minmax(300px, 400px) 1fr; gap:20px; align-items:start; }
   @media (max-width:960px){ .plants-layout{ grid-template-columns:1fr; } }
@@ -677,6 +708,11 @@
     <button id="tab-btn-plants" class="tab-btn" type="button">🌿 Plantações</button>
   </div>
 
+  <div class="global-search">
+    <input id="global-search-input" type="search" placeholder="🔍 Buscar clientes, tarefas, anotações e plantas..." autocomplete="off" aria-label="Busca geral">
+    <div id="global-search-results" class="global-search-results" role="listbox" aria-label="Resultados da busca"></div>
+  </div>
+
   <div id="tab-objectives" class="tab-panel">
 
     <div id="storage-warning" class="storage-warning" style="display:none;">
@@ -687,7 +723,19 @@
       <button id="btn-export" type="button" class="btn-ghost">💾 Baixar Backup</button>
       <button id="btn-import" type="button" class="btn-ghost">📥 Restaurar Backup</button>
       <span id="save-status" class="save-status">Salvo</span>
+      <span id="backup-reminder" class="backup-reminder" style="display:none;"></span>
       <button id="btn-zero-xp" type="button" class="btn-ghost" style="margin-left:auto;">🔄 Zerar XP</button>
+    </div>
+
+    <div class="dashboard-extras">
+      <section class="card">
+        <div class="card-head"><h2>📊 Resumo dos últimos 7 dias</h2></div>
+        <div id="weekly-summary" class="weekly-summary-stats"></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>⏰ Agenda próxima</h2></div>
+        <div id="upcoming-reminders" class="dashboard-extra-list"></div>
+      </section>
     </div>
 
     <main class="grid-main" id="grid-main-objectives">
@@ -1002,6 +1050,16 @@
       </section>
 
       <section class="col" id="clients-col-right">
+        <div class="card" data-card="clients-report" style="width:100%; min-width:100%; margin:0;">
+          <div class="card-head">
+            <div class="card-head-left"><span class="drag-handle" draggable="true" title="Arrastar para mover">⠿</span><h2>📈 Resumo de clientes</h2></div>
+            <button class="btn-minimize" type="button" aria-label="Minimizar">–</button>
+          </div>
+          <div class="card-body">
+            <div id="client-report-stats" class="client-report-stats"></div>
+            <div id="client-report-categories" style="margin-top:10px;"></div>
+          </div>
+        </div>
         <div class="card" data-card="clients-calendar" style="width:100%; min-width:100%; margin:0;">
           <div class="card-head">
             <div class="card-head-left"><span class="drag-handle" draggable="true" title="Arrastar para mover">⠿</span><h2>Calendário de clientes e entregas</h2></div>
@@ -1265,6 +1323,7 @@
     { key:"social",      label:"Social",      color:"#ff3d6e" }
   ];
   var STORAGE_KEY = "nexus_sys_state_v6_plants";
+  var BACKUP_TIMESTAMP_KEY = "nexus_sys_state_v6_last_backup";
   var LIME = "#b6ff3c";
   var RED = "#ff3d6e";
   var FONT_MAP = {
@@ -1378,6 +1437,7 @@
           if(!c.createdAt) c.createdAt = todayStr();
           if(!c.rating) c.rating = "bom";
           if(typeof c.deliveryDate === "undefined") c.deliveryDate = null;
+          if(typeof c.deliveryCompleted !== "boolean") c.deliveryCompleted = false;
           if(typeof c.wantsToBuy !== "string") c.wantsToBuy = "";
         });
       }
@@ -1454,7 +1514,8 @@
      "edit-modal","edit-title","edit-pillar-picker","edit-xp","edit-xp-label",
      "edit-confirm-single","edit-confirm-dual",
      "btn-edit-save","btn-edit-cancel","habit-calendar","empty-calendar",
-     "storage-warning","btn-export","btn-import","save-status","btn-zero-xp",
+     "storage-warning","btn-export","btn-import","save-status","backup-reminder","btn-zero-xp",
+     "global-search-input","global-search-results","weekly-summary","upcoming-reminders","client-report-stats","client-report-categories",
      "backup-modal","backup-modal-title","backup-modal-desc","backup-textarea",
      "btn-backup-copy","btn-backup-download","btn-backup-select-file","backup-file-input","btn-backup-restore","btn-backup-close",
      "pillar-modal","pillar-manage-list","new-pillar-name","new-pillar-color","pillar-form-label",
@@ -1986,6 +2047,7 @@
     renderSeasonGuideHighlights();
     renderPlantCalendar();
     applySavedPlantsCardOrder();
+    renderUpcomingReminders();
   }
 
   renderPillarPicker();
@@ -3193,6 +3255,7 @@
     state.todos.unshift({ id: uid(), text: text, createdAt: todayStr(), dueAt: dueAt });
     saveState();
     renderTodos();
+    renderUpcomingReminders();
     el["input-todo"].value = "";
     el["input-todo-due"].value = "";
     el["input-todo-timer-minutes"].value = "";
@@ -3205,17 +3268,20 @@
     var t = state.todos.find(function(x){ return x.id === id; });
     if(!t) return;
     state.todos = state.todos.filter(function(x){ return x.id !== id; });
-    state.history.unshift({ title: t.text, pillar: null, delta: null, type: "todo", time: nowStr() });
+    state.history.unshift({ title: t.text, pillar: null, delta: null, type: "todo", date: todayStr(), time: nowStr() });
     state.history = state.history.slice(0, 100);
     saveState();
     renderTodos();
     renderHistory();
+    renderWeeklySummary();
+    renderUpcomingReminders();
     playSuccessSound();
   }
   function removeTodo(id){
     state.todos = state.todos.filter(function(x){ return x.id !== id; });
     saveState();
     renderTodos();
+    renderUpcomingReminders();
   }
   el["btn-add-todo"].addEventListener("click", addTodo);
   el["input-todo"].addEventListener("keydown", function(e){ if(e.key === "Enter") addTodo(); });
@@ -3234,7 +3300,335 @@
     safeCall(renderTodos);
     safeCall(renderDiaryEntries);
     safeCall(renderBoard);
+    safeCall(renderWeeklySummary);
+    safeCall(renderUpcomingReminders);
+    safeCall(renderBackupReminder);
+    safeCall(renderGlobalSearchResults);
   }
+
+  function renderWeeklySummary(){
+    var startDate = dateStrDaysAgo(6);
+    var recentCompletions = 0;
+    var activeHabits = 0;
+    state.tasks.forEach(function(task){
+      var recent = (task.completions || []).filter(function(date){ return date >= startDate && date <= todayStr(); });
+      recentCompletions += recent.length;
+      if(recent.length) activeHabits++;
+    });
+    var completedTodos = state.history.filter(function(entry){
+      return entry.type === "todo" && entry.date && entry.date >= startDate && entry.date <= todayStr();
+    }).length;
+    var netXp = state.history.reduce(function(total, entry){
+      return entry.date && entry.date >= startDate && entry.date <= todayStr() && typeof entry.delta === "number"
+        ? total + entry.delta : total;
+    }, 0);
+    var newClients = state.clients.filter(function(client){
+      return client.createdAt && client.createdAt >= startDate && client.createdAt <= todayStr();
+    }).length;
+    var stats = [
+      { value:recentCompletions, label:"Ações registradas" },
+      { value:completedTodos, label:"Tarefas concluídas" },
+      { value:(netXp > 0 ? "+" : "") + netXp, label:"XP líquido" },
+      { value:activeHabits + " / " + newClients, label:"Hábitos ativos / novos clientes" }
+    ];
+    el["weekly-summary"].innerHTML = "";
+    stats.forEach(function(stat){
+      var item = document.createElement("div");
+      item.className = "summary-stat";
+      var value = document.createElement("strong");
+      value.textContent = stat.value;
+      var label = document.createElement("span");
+      label.textContent = stat.label;
+      item.appendChild(value);
+      item.appendChild(label);
+      el["weekly-summary"].appendChild(item);
+    });
+  }
+
+  function parseLocalIsoDate(dateStr){
+    var parts = String(dateStr || "").slice(0,10).split("-").map(Number);
+    if(parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+    var date = new Date(parts[0], parts[1] - 1, parts[2]);
+    if(date.getFullYear() !== parts[0] || date.getMonth() !== parts[1] - 1 || date.getDate() !== parts[2]) return null;
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function renderUpcomingReminders(){
+    var reminders = [];
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+    function addReminder(title, type, date, onOpen, overdue, onComplete){
+      if(!date) return;
+      var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if(day > cutoff || (day < today && !overdue)) return;
+      var overdueCutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+      if(overdue && day < overdueCutoff) return;
+      reminders.push({
+        title:title,
+        type:type,
+        date:day,
+        overdue:day < today || (type === "Tarefa" && !!overdue && day.getTime() === today.getTime()),
+        onOpen:onOpen,
+        onComplete:onComplete
+      });
+    }
+
+    state.todos.forEach(function(todo){
+      if(!todo.dueAt) return;
+      var date = new Date(todo.dueAt);
+      if(!isFinite(date.getTime())) return;
+      addReminder(todo.text, "Tarefa", date, function(){
+        switchTab("objectives");
+        var row = Array.prototype.slice.call(document.querySelectorAll(".todo-item")).find(function(item){
+          return item.textContent.indexOf(todo.text) !== -1;
+        });
+        if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
+      }, date.getTime() < Date.now());
+    });
+
+    state.board.lists.forEach(function(list){
+      list.cards.filter(function(card){ return !card.done && card.date; }).forEach(function(card){
+        addReminder(card.text, "Quadro", parseLocalIsoDate(card.date), function(){
+          switchTab("board");
+          setBoardView("board");
+          var cardEl = Array.prototype.slice.call(document.querySelectorAll(".board-card")).find(function(item){
+            return item.dataset.cardId === card.id;
+          });
+          if(cardEl) cardEl.scrollIntoView({ behavior:"smooth", block:"center" });
+        }, true);
+      });
+    });
+
+    state.clients.forEach(function(client){
+      if(client.deliveryDate && client.deliveryCompleted !== true){
+        addReminder("Entrega · " + client.name, "Cliente", parseLocalIsoDate(client.deliveryDate), function(){
+          switchTab("clients");
+          showClientCardModal(client);
+        }, true, function(){ setClientDeliveryCompleted(client, true); });
+      }
+      if(client.birthday){
+        var birthday = nextBirthdayDate(birthdayMMDD(client));
+        if(birthday) addReminder("Aniversário · " + client.name, "Cliente", birthday, function(){
+          switchTab("clients");
+          showClientCardModal(client);
+        }, false);
+      }
+    });
+    state.plants.forEach(function(plant){
+      if(plant.nextFertilizer){
+        addReminder("Adubar · " + plant.name, "Planta", parseLocalIsoDate(plant.nextFertilizer), function(){
+          switchTab("plants");
+          showPlantHistory(plant);
+        }, true);
+      }
+    });
+
+    reminders.sort(function(a,b){ return a.date - b.date; });
+    el["upcoming-reminders"].innerHTML = "";
+    if(!reminders.length){
+      el["upcoming-reminders"].innerHTML = '<p class="dashboard-extra-empty">Nenhum prazo, entrega ou evento nos próximos 7 dias.</p>';
+      return;
+    }
+    reminders.slice(0,12).forEach(function(reminder){
+      var item = document.createElement("div");
+      item.className = "dashboard-extra-item";
+      var title = document.createElement("strong");
+      title.textContent = reminder.title;
+      var date = document.createElement("span");
+      var dateText = pad2(reminder.date.getDate()) + "/" + pad2(reminder.date.getMonth()+1);
+      date.textContent = reminder.type + " · " + dateText + (reminder.overdue ? " · atrasado" : "");
+      if(reminder.overdue) date.style.color = "var(--red)";
+      var content = document.createElement("div");
+      content.className = "dashboard-reminder-content";
+      var openButton = document.createElement("button");
+      openButton.type = "button";
+      openButton.className = "dashboard-reminder-open";
+      openButton.appendChild(title);
+      openButton.appendChild(date);
+      openButton.addEventListener("click", reminder.onOpen);
+      content.appendChild(openButton);
+      if(reminder.onComplete){
+        var completeButton = document.createElement("button");
+        completeButton.type = "button";
+        completeButton.className = "dashboard-reminder-done";
+        completeButton.textContent = "✓ Entregue";
+        completeButton.setAttribute("aria-label", "Confirmar entrega de " + reminder.title.replace(/^Entrega · /, ""));
+        completeButton.addEventListener("click", function(){
+          reminder.onComplete();
+        });
+        content.appendChild(completeButton);
+      }
+      item.appendChild(content);
+      el["upcoming-reminders"].appendChild(item);
+    });
+  }
+
+  function getGlobalSearchIndex(){
+    var results = [];
+    state.clients.forEach(function(client){
+      results.push({ title:client.name || "Cliente", detail:"Cliente · " + (client.phone || "sem telefone"), text:[client.name,client.cpf,client.phone,client.purchase,client.wantsToBuy,client.category].join(" "), open:function(){
+        switchTab("clients");
+        showClientCardModal(client);
+      }});
+    });
+    state.tasks.forEach(function(task){
+      results.push({ title:task.title, detail:"Ação · " + pillarInfo(task.pillar).label, text:task.title + " " + pillarInfo(task.pillar).label, open:function(){
+        switchTab("objectives");
+        var row = document.querySelector('[data-task-id="' + task.id + '"]');
+        if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
+      }});
+    });
+    state.todos.forEach(function(todo){
+      results.push({ title:todo.text, detail:"Tarefa pendente", text:todo.text, open:function(){
+        switchTab("objectives");
+        var row = Array.prototype.slice.call(document.querySelectorAll(".todo-item")).find(function(item){
+          return item.textContent.indexOf(todo.text) !== -1;
+        });
+        if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
+      }});
+    });
+    state.board.lists.forEach(function(list){
+      list.cards.forEach(function(card){
+        results.push({ title:card.text, detail:"Quadro · " + list.title, text:card.text + " " + list.title, open:function(){
+          switchTab("board");
+          setBoardView(card.done ? "history" : "board");
+          var cardEl = Array.prototype.slice.call(document.querySelectorAll(".board-card,[data-history-card-id]")).find(function(item){
+            return item.dataset.cardId === card.id || item.dataset.historyCardId === card.id;
+          });
+          if(cardEl) cardEl.scrollIntoView({ behavior:"smooth", block:"center" });
+        }});
+      });
+    });
+    state.plants.forEach(function(plant){
+      results.push({ title:plant.name, detail:"Planta", text:[plant.name,plant.desc,plant.fertilizerType].join(" "), open:function(){
+        switchTab("plants");
+        showPlantHistory(plant);
+      }});
+    });
+    state.notebookFolders.forEach(function(folder){
+      folder.notes.forEach(function(note){
+        var noteText = note.textFormat === "html"
+          ? new DOMParser().parseFromString(note.text || "", "text/html").body.textContent
+          : note.text;
+        results.push({ title:note.title || "Anotação", detail:"Anotação · " + folder.name, text:[note.title,noteText,folder.name].join(" "), open:function(){
+          state.activeNotebookFolderId = folder.id;
+          switchTab("diary");
+          renderNotebook();
+          var noteEl = Array.prototype.slice.call(document.querySelectorAll(".notebook-note")).find(function(item){
+            return item.dataset.notebookId === note.id;
+          });
+          if(noteEl){
+            noteEl.scrollIntoView({ behavior:"smooth", block:"center" });
+            var toggle = noteEl.querySelector(".notebook-note-toggle");
+            if(toggle && toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+          }
+        }});
+      });
+    });
+    state.diaryEntries.forEach(function(entry){
+      results.push({ title:entry.text.slice(0,65), detail:"Diário geral · " + (entry.time || ""), text:entry.text, open:function(){
+        switchTab("diary");
+        var entryEl = Array.prototype.slice.call(document.querySelectorAll(".diary-entry")).find(function(item){
+          return item.textContent.indexOf(entry.text) !== -1;
+        });
+        if(entryEl) entryEl.scrollIntoView({ behavior:"smooth", block:"center" });
+      }});
+    });
+    return results;
+  }
+
+  function renderGlobalSearchResults(){
+    var query = (el["global-search-input"].value || "").trim().toLocaleLowerCase("pt-BR");
+    var container = el["global-search-results"];
+    container.innerHTML = "";
+    if(query.length < 2){
+      container.classList.remove("show");
+      return;
+    }
+    var matches = getGlobalSearchIndex().filter(function(item){
+      return item.text.toLocaleLowerCase("pt-BR").indexOf(query) !== -1;
+    }).slice(0,12);
+    if(!matches.length){
+      var empty = document.createElement("p");
+      empty.className = "global-search-empty";
+      empty.textContent = "Nenhum resultado encontrado.";
+      container.appendChild(empty);
+    } else {
+      matches.forEach(function(match){
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "global-search-result";
+        var title = document.createElement("strong");
+        title.textContent = match.title;
+        var detail = document.createElement("span");
+        detail.textContent = match.detail;
+        button.appendChild(title);
+        button.appendChild(detail);
+        button.addEventListener("click", function(){
+          container.classList.remove("show");
+          el["global-search-input"].value = "";
+          match.open();
+        });
+        container.appendChild(button);
+      });
+    }
+    container.classList.add("show");
+  }
+
+  el["global-search-input"].addEventListener("input", renderGlobalSearchResults);
+  el["global-search-input"].addEventListener("keydown", function(event){
+    if(event.key === "Escape"){
+      el["global-search-results"].classList.remove("show");
+      el["global-search-input"].blur();
+    }
+  });
+  document.addEventListener("click", function(event){
+    if(!event.target.closest(".global-search")) el["global-search-results"].classList.remove("show");
+  });
+
+  function markBackupCreated(){
+    try{
+      localStorage.setItem(BACKUP_TIMESTAMP_KEY, new Date().toISOString());
+      renderBackupReminder();
+    }catch(err){
+      console.error("Não foi possível registrar a data do último backup:", err);
+    }
+  }
+
+  function renderBackupReminder(){
+    var reminder = el["backup-reminder"];
+    var lastBackup = null;
+    try{
+      var stored = localStorage.getItem(BACKUP_TIMESTAMP_KEY);
+      if(stored) lastBackup = new Date(stored);
+    }catch(err){
+      console.error("Não foi possível consultar a data do último backup:", err);
+    }
+    var days = lastBackup && isFinite(lastBackup.getTime())
+      ? Math.floor((Date.now() - lastBackup.getTime()) / 86400000) : null;
+    if(days !== null && days < 7){
+      reminder.style.display = "none";
+      reminder.textContent = "";
+      return;
+    }
+    reminder.style.display = "block";
+    reminder.textContent = days === null
+      ? "Ainda não há um backup registrado neste navegador. "
+      : "Seu último backup foi há " + days + " dias. ";
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Fazer backup agora";
+    button.addEventListener("click", function(){ el["btn-export"].click(); });
+    reminder.appendChild(button);
+  }
+
+  setInterval(function(){
+    renderWeeklySummary();
+    renderUpcomingReminders();
+    renderBackupReminder();
+  }, 60000);
 
   function applyTask(task, overrideDelta, labelSuffix){
     var scrollPos = window.scrollY;
@@ -3254,7 +3648,7 @@
     var hadToday = task.completions.indexOf(today) !== -1;
     task.completions.push(today);
 
-    var entry = { title: task.title + (labelSuffix || ""), pillar: task.pillar, delta: delta, time: nowStr() };
+    var entry = { title: task.title + (labelSuffix || ""), pillar: task.pillar, delta: delta, date: today, time: nowStr() };
     state.history.unshift(entry);
     state.history = state.history.slice(0, 100);
 
@@ -3349,6 +3743,7 @@
     link.click();
     link.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    markBackupCreated();
   }
 
   // Backup export can be downloaded as a JSON file or copied for transfer.
@@ -3417,9 +3812,11 @@
     el["backup-textarea"].select();
     try {
       navigator.clipboard.writeText(el["backup-textarea"].value).then(function(){
+        markBackupCreated();
         alert("Código copiado com sucesso! Agora é só colar e salvar no Bloco de Notas.");
       }, function(){
         document.execCommand("copy");
+        markBackupCreated();
         alert("Código selecionado/copiado com sucesso!");
       });
     } catch(e) {
@@ -3946,6 +4343,7 @@
     container.appendChild(addListBtn);
 
     setupBoardListDragOver();
+    renderUpcomingReminders();
   }
 
   document.addEventListener("click", function(e){
@@ -4098,6 +4496,7 @@
   function renderHistoryRow(card, listTitle){
     var row = document.createElement("div");
     row.className = "h-item";
+    row.dataset.historyCardId = card.id;
     var statusColor = card.done ? LIME : "var(--dim-2)";
     var statusText = card.done ? ("✓ concluído" + (card.completedAt ? (" · " + card.completedAt) : "")) : "pendente";
     row.innerHTML =
@@ -4284,6 +4683,17 @@
     renderCategoryDropdown();
   }
 
+  function setClientDeliveryCompleted(client, completed){
+    if(!client || !client.deliveryDate) return;
+    client.deliveryCompleted = completed;
+    client.deliveryCompletedAt = completed ? todayStr() : null;
+    saveState();
+    renderUpcomingReminders();
+    renderClientsList();
+    renderClientReport();
+    renderClientCalendar();
+  }
+
   function startEditClient(client){
     editingClientId = client.id;
     clientPhotoData = client.photo || null;
@@ -4335,6 +4745,7 @@
       cpf: cpf,
       birthday: el["client-birthday"].value || null,
       deliveryDate: el["client-delivery-date"].value || null,
+      deliveryCompleted: false,
       phone: el["client-phone"].value.trim(),
       purchase: el["client-purchase"].value.trim(),
       wantsToBuy: el["client-wants-to-buy"].value.trim(),
@@ -4345,8 +4756,13 @@
     if(editingClientId){
       var existing = state.clients.find(function(c){ return c.id === editingClientId; });
       if(existing){
+        var deliveryDateChanged = existing.deliveryDate !== data.deliveryDate;
         existing.name = data.name; existing.cpf = data.cpf; existing.birthday = data.birthday;
         existing.deliveryDate = data.deliveryDate; existing.wantsToBuy = data.wantsToBuy;
+        if(deliveryDateChanged){
+          existing.deliveryCompleted = false;
+          existing.deliveryCompletedAt = null;
+        }
         existing.phone = data.phone; existing.purchase = data.purchase; existing.category = data.category;
         existing.rating = data.rating; existing.photo = data.photo;
       }
@@ -4436,7 +4852,7 @@
       '<p><strong>Nome:</strong> ' + escapeHtml(client.name) + '</p>' +
       '<p><strong>CPF:</strong> ' + escapeHtml(formatCpfDisplay(client.cpf)) + '</p>' +
       '<p><strong>Aniversário:</strong> ' + formatBirthdayDisplay(client.birthday) + '</p>' +
-      '<p><strong>Data de entrega:</strong> ' + (client.deliveryDate ? formatBirthdayDisplay(client.deliveryDate) : "—") + '</p>' +
+      '<p><strong>Data de entrega:</strong> ' + (client.deliveryDate ? formatBirthdayDisplay(client.deliveryDate) + (client.deliveryCompleted ? " · ✅ Entregue" : " · Pendente") : "—") + '</p>' +
       '<p><strong>Telefone:</strong> ' + escapeHtml(client.phone || "—") + '</p>' +
       '<p><strong>Avaliação:</strong> ' + getRatingBadge(client.rating) + '</p>' +
       '<p><strong>Categoria:</strong> ' + escapeHtml(client.category || "Geral") + '</p>' +
@@ -4479,7 +4895,7 @@
         photoHtml +
         '<p class="client-detail-line"><strong>CPF:</strong> ' + escapeHtml(formatCpfDisplay(client.cpf)) + '</p>' +
         '<p class="client-detail-line"><strong>Aniversário:</strong> ' + escapeHtml(formatBirthdayDisplay(client.birthday)) + '</p>' +
-        '<p class="client-detail-line"><strong>Data de entrega:</strong> ' + escapeHtml(client.deliveryDate ? formatBirthdayDisplay(client.deliveryDate) : "—") + '</p>' +
+        '<p class="client-detail-line"><strong>Data de entrega:</strong> ' + escapeHtml(client.deliveryDate ? formatBirthdayDisplay(client.deliveryDate) + (client.deliveryCompleted ? " · Entregue" : " · Pendente") : "—") + '</p>' +
         '<p class="client-detail-line"><strong>Telefone:</strong> ' + escapeHtml(client.phone || "—") + '</p>' +
         '<p class="client-detail-line"><strong>Avaliação:</strong> ' + getRatingBadge(client.rating) + '</p>' +
         '<p class="client-detail-line"><strong>Categoria:</strong> ' + escapeHtml(client.category || "Geral") + '</p>' +
@@ -4655,7 +5071,7 @@
         var birthday = nextBirthdayDate(birthdayMMDD(client));
         if(birthday) upcoming.push({ client:client, type:"birthday", date:birthday });
       }
-      if(filter !== "birthdays" && client.deliveryDate){
+      if(filter !== "birthdays" && client.deliveryDate && client.deliveryCompleted !== true){
         var parts = client.deliveryDate.split("-").map(Number);
         var delivery = new Date(parts[0], parts[1]-1, parts[2]);
         if(delivery.getFullYear() === parts[0] && delivery.getMonth() === parts[1]-1 &&
@@ -4740,8 +5156,8 @@
         }
         if(c.deliveryDate === fullDateStr){
           var deliveryChip = document.createElement("div");
-          deliveryChip.className = "delivery-chip";
-          deliveryChip.textContent = "📦 Entrega: " + c.name;
+          deliveryChip.className = "delivery-chip" + (c.deliveryCompleted ? " completed" : "");
+          deliveryChip.textContent = (c.deliveryCompleted ? "✅ Entregue: " : "📦 Entrega: ") + c.name;
           deliveryChip.title = "Entrega" + (c.wantsToBuy ? " de " + c.wantsToBuy : "") + " para " + c.name;
           deliveryChip.addEventListener("click", function(){ showClientCardModal(c); });
           dayEl.appendChild(deliveryChip);
@@ -4753,13 +5169,60 @@
   el["btn-client-cal-prev"].addEventListener("click", function(){ clientCalendarCursor.setMonth(clientCalendarCursor.getMonth()-1); renderClientCalendar(); });
   el["btn-client-cal-next"].addEventListener("click", function(){ clientCalendarCursor.setMonth(clientCalendarCursor.getMonth()+1); renderClientCalendar(); });
 
+  function renderClientReport(){
+    var counts = {};
+    state.categories.forEach(function(category){ counts[category] = 0; });
+    state.clients.forEach(function(client){
+      var category = client.category || "Geral";
+      counts[category] = (counts[category] || 0) + 1;
+    });
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var nextWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate()+7);
+    var upcomingDeliveries = state.clients.filter(function(client){
+      var delivery = parseLocalIsoDate(client.deliveryDate);
+      return client.deliveryCompleted !== true && delivery && delivery >= today && delivery <= nextWeek;
+    }).length;
+    var stats = [
+      { value:state.clients.length, label:"Clientes cadastradas" },
+      { value:state.clients.filter(function(client){ return client.rating === "favorito"; }).length, label:"Favoritas" },
+      { value:state.clients.filter(function(client){ return (client.category || "").toLocaleLowerCase("pt-BR") === "recorrente"; }).length, label:"Marcadas como recorrentes" },
+      { value:upcomingDeliveries, label:"Entregas nos próximos 7 dias" }
+    ];
+    el["client-report-stats"].innerHTML = "";
+    stats.forEach(function(stat){
+      var item = document.createElement("div");
+      item.className = "summary-stat";
+      item.innerHTML = "<strong></strong><span></span>";
+      item.querySelector("strong").textContent = stat.value;
+      item.querySelector("span").textContent = stat.label;
+      el["client-report-stats"].appendChild(item);
+    });
+    var categoryContainer = el["client-report-categories"];
+    categoryContainer.innerHTML = "";
+    state.categories.forEach(function(category){
+      var row = document.createElement("div");
+      row.className = "client-report-category";
+      var name = document.createElement("span");
+      name.textContent = category;
+      var count = document.createElement("strong");
+      count.textContent = counts[category] || 0;
+      row.appendChild(name);
+      row.appendChild(count);
+      categoryContainer.appendChild(row);
+    });
+  }
+
   function renderClientsTab(){
     renderCategoryDropdown();
     renderClientsList();
     renderCategoryManager();
+    renderClientReport();
     renderUpcomingBirthdays();
     renderClientCalendar();
     applySavedClientsCardOrder();
+    renderWeeklySummary();
+    renderUpcomingReminders();
   }
 
 })();
