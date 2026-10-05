@@ -402,12 +402,15 @@
   .board-list-menu-btn:hover{ color:var(--cyan); background:rgba(255,255,255,0.08); }
   .board-list-dropdown{
     position:absolute; top:30px; right:0; background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
-    padding:6px; min-width:170px; z-index:40; box-shadow:0 10px 24px -8px rgba(0,0,0,0.6); display:none;
+    padding:6px; min-width:210px; z-index:40; box-shadow:0 10px 24px -8px rgba(0,0,0,0.6); display:none;
   }
   .board-list-dropdown.show{ display:block; }
   .board-list-dropdown button{ width:100%; text-align:left; padding:8px 10px; border-radius:6px; font-size:0.82rem; color:var(--text); }
   .board-list-dropdown button:hover{ background:rgba(255,255,255,0.08); }
   .board-list-dropdown button.danger:hover{ color:var(--red); }
+  .board-list-deadline-control{ display:flex; flex-direction:column; gap:5px; padding:8px 10px; color:var(--dim); font-size:0.72rem; }
+  .board-list-deadline-control input{ width:100%; padding:5px 6px; border:1px solid var(--line); border-radius:5px; background:var(--void); color:var(--text); font-size:0.72rem; }
+  .board-list-deadline{ flex-shrink:0; color:var(--cyan); font:0.6rem 'JetBrains Mono',monospace; }
 
   .board-cards{ display:flex; flex-direction:column; gap:8px; min-height:80px; }
   .board-card{ background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:9px 10px; cursor:grab; }
@@ -1401,7 +1404,7 @@
     return {
       pillarsMeta: buildDefaultPillarsMeta(), pillars: pillars, tasks: tasks, history: [],
       todos: [], diaryEntries: [], notebookFolders: [], activeNotebookFolderId: null, uiCollapsed: {}, cardOrder: null, clientsCardOrder: null, plantsCardOrder: null, dashboardLayout: null, activeTab: "objectives",
-      board: { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", cards: [] } ] },
+      board: { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", dueDate: null, cards: [] } ] },
       uiPrefs: { font: "default", bg: null },
       boardView: "board",
       clients: [],
@@ -1474,6 +1477,7 @@
       parsed.board.lists.forEach(function(l){
         if(!l.color) l.color = "#14141f";
         if(!l.cards) l.cards = [];
+        if(typeof l.dueDate !== "string") l.dueDate = null;
         l.cards.forEach(function(c){
           if(typeof c.date === "undefined") c.date = null;
           if(!c.color) c.color = "";
@@ -4292,17 +4296,28 @@
     });
   }
   function persistBoardCardOrder(){
+    var cardsById = {};
+    state.board.lists.forEach(function(list){
+      list.cards.forEach(function(card){ cardsById[card.id] = card; });
+    });
     document.querySelectorAll(".board-list").forEach(function(listEl){
       var listId = listEl.dataset.listId;
       var list = state.board.lists.find(function(l){ return l.id === listId; });
       if(!list) return;
-      var newCards = [];
+      var newCards = list.cards.filter(function(card){ return card.done; });
       listEl.querySelectorAll(".board-card[data-card-id]").forEach(function(cardEl){
-        var card = findCardAnywhere(cardEl.dataset.cardId);
+        var card = cardsById[cardEl.dataset.cardId];
         if(card) newCards.push(card);
       });
       list.cards = newCards;
     });
+  }
+
+  function applyBoardListDeadline(list, date){
+    list.dueDate = date || null;
+    list.cards.forEach(function(card){ card.date = list.dueDate; });
+    saveState();
+    renderBoard();
   }
 
   function openCardDatePicker(btn, card){
@@ -4314,9 +4329,14 @@
     input.focus();
     try{ if(input.showPicker) input.showPicker(); }catch(err){}
     input.addEventListener("change", function(){
-      card.date = input.value || null;
-      saveState();
-      renderBoard();
+      var parentList = state.board.lists.find(function(list){ return list.cards.indexOf(card) !== -1; });
+      if(parentList && parentList.dueDate){
+        applyBoardListDeadline(parentList, input.value);
+      } else {
+        card.date = input.value || null;
+        saveState();
+        renderBoard();
+      }
     });
     input.addEventListener("blur", function(){ setTimeout(renderBoard, 150); });
   }
@@ -4449,6 +4469,10 @@
       });
       container.addEventListener("drop", function(e){
         e.preventDefault();
+        var draggedCard = document.querySelector(".board-card.dragging");
+        var targetList = state.board.lists.find(function(list){ return list.id === container.dataset.listId; });
+        var movedCard = draggedCard && findCardAnywhere(draggedCard.dataset.cardId);
+        if(targetList && targetList.dueDate && movedCard) movedCard.date = targetList.dueDate;
         persistBoardCardOrder();
         saveState();
       });
@@ -4471,9 +4495,13 @@
           '<span class="board-list-drag" draggable="true" title="Arrastar lista">⠿</span>' +
           '<input class="board-list-title" type="text" value="' + escapeAttr(list.title) + '" maxlength="40">' +
           '<span class="board-list-count">' + activeCards.length + '</span>' +
+          (list.dueDate ? '<span class="board-list-deadline" title="Prazo aplicado a todos os cards">⏰ ' + escapeHtml(formatDateShort(list.dueDate)) + '</span>' : '') +
           '<button class="board-list-menu-btn" type="button" aria-label="Opções da lista">⋯</button>' +
           '<div class="board-list-dropdown">' +
             '<button type="button" data-action="add">+ Adicionar card</button>' +
+            '<label class="board-list-deadline-control">Data limite para todos os cards' +
+              '<input type="date" data-action="deadline" value="' + escapeAttr(list.dueDate || "") + '" aria-label="Data limite para todos os cards desta lista">' +
+            '</label>' +
             '<button type="button" data-action="rename">✎ Renomear</button>' +
             '<button type="button" data-action="color">🎨 Mudar cor</button>' +
             '<button type="button" data-action="delete" class="danger">🗑 Excluir lista</button>' +
@@ -4512,6 +4540,13 @@
         dropdown.classList.remove("show");
         listEl.querySelector(".board-add-card-row input").focus();
       });
+      var deadlineInput = dropdown.querySelector('[data-action="deadline"]');
+      deadlineInput.addEventListener("click", function(){
+        if(typeof deadlineInput.showPicker === "function") deadlineInput.showPicker();
+      });
+      deadlineInput.addEventListener("change", function(event){
+        applyBoardListDeadline(list, event.currentTarget.value);
+      });
       dropdown.querySelector('[data-action="rename"]').addEventListener("click", function(){
         dropdown.classList.remove("show");
         titleInput.focus();
@@ -4544,7 +4579,7 @@
         if(e.key === "Enter"){
           var text = addInput.value.trim();
           if(!text) return;
-          list.cards.push({ id: uid(), text: text, date: null, color: "", done: false, completedAt: null });
+          list.cards.push({ id: uid(), text: text, date: list.dueDate || null, color: "", done: false, completedAt: null });
           saveState();
           addInput.value = "";
           renderBoard();
@@ -4559,7 +4594,7 @@
     addListBtn.className = "board-add-list";
     addListBtn.textContent = "+ Adicionar outra lista";
     addListBtn.addEventListener("click", function(){
-      var newList = { id: uid(), title: "Nova lista", color: "#14141f", cards: [] };
+      var newList = { id: uid(), title: "Nova lista", color: "#14141f", dueDate: null, cards: [] };
       state.board.lists.push(newList);
       saveState();
       renderBoard();
@@ -4604,9 +4639,14 @@
       if(!draggedCardId) return;
       var card = findCardAnywhere(draggedCardId);
       if(!card) return;
-      card.date = dateStr;
+      var parentList = state.board.lists.find(function(list){ return list.cards.indexOf(card) !== -1; });
+      if(parentList && parentList.dueDate){
+        applyBoardListDeadline(parentList, dateStr);
+      } else {
+        card.date = dateStr;
+        saveState();
+      }
       draggedCardId = null;
-      saveState();
       renderCalendarView();
     });
   }
