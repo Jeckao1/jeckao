@@ -373,7 +373,8 @@
   .notebook-note-heading{ min-width:0; display:flex; flex:1; justify-content:space-between; align-items:flex-start; gap:8px; }
   .notebook-note-title{ font-weight:600; overflow-wrap:anywhere; }
   .notebook-note-time{ flex-shrink:0; font:0.66rem 'JetBrains Mono',monospace; color:var(--dim-2); }
-  .notebook-note-text{ white-space:pre-wrap; overflow-wrap:anywhere; font-size:0.88rem; line-height:1.6; }
+  .notebook-note-text{ white-space:pre-wrap; overflow-wrap:anywhere; font-size:0.88rem; line-height:1.6; cursor:pointer; }
+  .notebook-note-text:focus-visible{ border-radius:3px; }
   .notebook-note-text.collapsed{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; }
   .notebook-note-toggle{ flex-shrink:0; }
   .notebook-empty{ color:var(--dim-2); font-size:0.84rem; text-align:center; padding:18px 6px; }
@@ -2681,9 +2682,29 @@
         header.appendChild(actions);
         var text = document.createElement("p");
         text.className = "notebook-note-text collapsed";
+        text.tabIndex = 0;
+        text.setAttribute("role", "button");
+        text.setAttribute("aria-label", "Mostrar anotação completa: " + (note.title || "Anotação"));
+        text.setAttribute("aria-expanded", "false");
         if(note.textFormat === "html") text.innerHTML = sanitizeNotebookNoteHtml(note.text || "");
         else text.textContent = note.text;
         var noteExpanded = false;
+        function toggleNoteExpansion(){
+          noteExpanded = !noteExpanded;
+          text.classList.toggle("collapsed", !noteExpanded);
+          text.setAttribute("aria-expanded", String(noteExpanded));
+          toggleTextButton.textContent = noteExpanded ? "⌃" : "⌄";
+          toggleTextButton.title = noteExpanded ? "Minimizar anotação" : "Mostrar anotação completa";
+          toggleTextButton.setAttribute("aria-label", toggleTextButton.title);
+          toggleTextButton.setAttribute("aria-expanded", String(noteExpanded));
+        }
+        text.addEventListener("click", toggleNoteExpansion);
+        text.addEventListener("keydown", function(event){
+          if(event.key === "Enter" || event.key === " "){
+            event.preventDefault();
+            toggleNoteExpansion();
+          }
+        });
         var toggleTextButton = document.createElement("button");
         toggleTextButton.type = "button";
         toggleTextButton.className = "btn-icon notebook-note-toggle";
@@ -2691,14 +2712,7 @@
         toggleTextButton.title = "Mostrar anotação completa";
         toggleTextButton.setAttribute("aria-label", "Mostrar anotação completa");
         toggleTextButton.setAttribute("aria-expanded", "false");
-        toggleTextButton.addEventListener("click", function(){
-          noteExpanded = !noteExpanded;
-          text.classList.toggle("collapsed", !noteExpanded);
-          toggleTextButton.textContent = noteExpanded ? "⌃" : "⌄";
-          toggleTextButton.title = noteExpanded ? "Minimizar anotação" : "Mostrar anotação completa";
-          toggleTextButton.setAttribute("aria-label", toggleTextButton.title);
-          toggleTextButton.setAttribute("aria-expanded", String(noteExpanded));
-        });
+        toggleTextButton.addEventListener("click", toggleNoteExpansion);
         actions.appendChild(toggleTextButton);
         var controls = document.createElement("div");
         controls.className = "notebook-folder-controls";
