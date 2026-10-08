@@ -143,6 +143,14 @@
   .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--cyan); }
   .field input::placeholder, .field textarea::placeholder{ color:var(--dim-2); }
   .field input[type="color"]{ width:100%; height:40px; background:var(--void); border:1px solid var(--line); border-radius:8px; padding:4px; cursor:pointer; }
+  .date-input-row{ display:flex; align-items:stretch; gap:8px; }
+  .date-input-row input[type="date"]{ flex:1; min-width:0; min-height:46px; cursor:pointer; touch-action:manipulation; }
+  .date-picker-button{ flex:0 0 48px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:8px; background:var(--void); color:var(--cyan); font-size:1.1rem; touch-action:manipulation; }
+  .date-picker-button:hover,.date-picker-button:focus-visible{ border-color:var(--cyan); }
+  .client-ocr-panel{ display:grid; gap:8px; margin-top:10px; padding:10px; border:1px solid var(--line-soft); border-radius:8px; background:rgba(0,0,0,0.14); }
+  .client-ocr-help,.client-ocr-status{ color:var(--dim); font-size:0.74rem; }
+  .client-ocr-status.error{ color:var(--red); }
+  .client-ocr-text{ width:100%; min-height:90px; resize:vertical; padding:8px; background:var(--void); border:1px solid var(--line); border-radius:7px; color:var(--text); font-size:0.78rem; }
 
   .pillar-picker{ display:flex; flex-wrap:wrap; gap:8px; }
   .chip{ border:1px solid var(--line); border-radius:999px; padding:7px 14px; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:0.82rem; color:var(--dim); transition:all .15s; }
@@ -1030,14 +1038,36 @@
                 <span id="client-photo-dropzone-text">📎 Arraste uma foto aqui ou clique para escolher</span>
                 <input id="client-photo-input" type="file" accept="image/*" style="display:none;">
               </div>
+              <div class="client-ocr-panel">
+                <button id="btn-client-ocr" type="button" class="btn-ghost">🔎 Ler dados de uma foto</button>
+                <input id="client-ocr-input" type="file" accept="image/*" capture="environment" style="display:none;">
+                <p class="client-ocr-help">O texto da imagem é reconhecido neste aparelho. A foto não é enviada; é necessária conexão para carregar o mecanismo OCR e o idioma português.</p>
+                <p id="client-ocr-status" class="client-ocr-status" role="status" aria-live="polite"></p>
+                <details id="client-ocr-result" style="display:none;">
+                  <summary>Conferir texto reconhecido</summary>
+                  <textarea id="client-ocr-text" class="client-ocr-text" readonly aria-label="Texto reconhecido na imagem"></textarea>
+                </details>
+              </div>
               <div id="client-photo-preview" style="display:none; margin-top:8px;">
                 <img id="client-photo-preview-img" style="max-width:100%; border-radius:8px; border:1px solid var(--line);">
               </div>
             </div>
             <div class="field"><label for="client-name">Nome</label><input id="client-name" type="text" placeholder="Nome da cliente" maxlength="60"></div>
             <div class="field"><label for="client-cpf">CPF</label><input id="client-cpf" type="text" placeholder="000.000.000-00" maxlength="20"></div>
-            <div class="field"><label for="client-birthday">Data de aniversário</label><input id="client-birthday" type="date"></div>
-            <div class="field"><label for="client-delivery-date">Data de entrega</label><input id="client-delivery-date" type="date"></div>
+            <div class="field">
+              <label for="client-birthday">Data de aniversário</label>
+              <div class="date-input-row">
+                <input id="client-birthday" type="date">
+                <button id="btn-client-birthday-calendar" class="date-picker-button" type="button" aria-label="Abrir calendário do aniversário" title="Abrir calendário">📅</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="client-delivery-date">Data de entrega</label>
+              <div class="date-input-row">
+                <input id="client-delivery-date" type="date">
+                <button id="btn-client-delivery-calendar" class="date-picker-button" type="button" aria-label="Abrir calendário da entrega" title="Abrir calendário">📅</button>
+              </div>
+            </div>
             <div class="field"><label for="client-phone">Telefone</label><input id="client-phone" type="text" placeholder="(00) 00000-0000" maxlength="20"></div>
             <div class="field"><label for="client-purchase">O que comprou</label><input id="client-purchase" type="text" placeholder="Ex: Vestido azul" maxlength="120"></div>
             <div class="field"><label for="client-wants-to-buy">O que quer comprar</label><input id="client-wants-to-buy" type="text" placeholder="Ex: Bolsa vermelha" maxlength="120"></div>
@@ -1584,8 +1614,8 @@
      "col-left","col-right",
      "tab-btn-objectives","tab-btn-diary","tab-objectives","tab-diary",
      "tab-btn-board","tab-board","board-lists","btn-board-settings",
-     "tab-btn-clients","tab-clients","client-form-title","client-photo-input","client-photo-preview","client-photo-preview-img",
-     "client-name","client-cpf","client-birthday","client-delivery-date","client-phone","client-purchase","client-wants-to-buy","client-rating-select","btn-add-client",
+     "tab-btn-clients","tab-clients","client-form-title","client-photo-input","client-ocr-input","btn-client-ocr","client-ocr-status","client-ocr-result","client-ocr-text","client-photo-preview","client-photo-preview-img",
+     "client-name","client-cpf","client-birthday","client-delivery-date","btn-client-birthday-calendar","btn-client-delivery-calendar","client-phone","client-purchase","client-wants-to-buy","client-rating-select","btn-add-client",
      "client-photo-dropzone","client-photo-dropzone-text",
      "clients-list","clients-count","empty-clients","upcoming-birthdays-list","client-upcoming-filter",
      "btn-client-cal-prev","btn-client-cal-next","client-calendar-month-label","client-calendar-weekdays","client-calendar-grid",
@@ -4837,6 +4867,237 @@
     reader.readAsDataURL(file);
   }
 
+  var clientOcrLibraryPromise = null;
+  var clientOcrWorkerPromise = null;
+  var CLIENT_OCR_CDN = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1";
+
+  function loadClientOcrLibrary(){
+    if(window.Tesseract) return Promise.resolve(window.Tesseract);
+    if(clientOcrLibraryPromise) return clientOcrLibraryPromise;
+    clientOcrLibraryPromise = new Promise(function(resolve, reject){
+      var script = document.createElement("script");
+      script.src = CLIENT_OCR_CDN + "/dist/tesseract.min.js";
+      script.async = true;
+      script.onload = function(){
+        if(window.Tesseract) resolve(window.Tesseract);
+        else {
+          clientOcrLibraryPromise = null;
+          reject(new Error("A biblioteca OCR foi carregada, mas não ficou disponível."));
+        }
+      };
+      script.onerror = function(){
+        clientOcrLibraryPromise = null;
+        reject(new Error("Não foi possível carregar o OCR. Verifique sua conexão com a internet e tente novamente."));
+      };
+      document.head.appendChild(script);
+    });
+    return clientOcrLibraryPromise;
+  }
+
+  function normalizeOcrLabel(value){
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function parseClientOcrText(text){
+    var values = {};
+    var lines = String(text || "").split(/\r?\n/);
+    var fields = [
+      { name:"name", labels:["nome","nome completo","nome da cliente","nome do cliente","cliente"] },
+      { name:"cpf", labels:["cpf","documento","cpf da cliente"] },
+      { name:"birthday", labels:["aniversario","data aniversario","data de aniversario","data do aniversario","nascimento","data de nascimento"] },
+      { name:"deliveryDate", labels:["entrega","data entrega","data da entrega","data de entrega","prazo de entrega"] },
+      { name:"phone", labels:["telefone","telefone celular","numero de telefone","celular","whatsapp","fone"] },
+      { name:"purchase", labels:["o que comprou","item comprado","comprou","produto","compra"] },
+      { name:"wantsToBuy", labels:["o que quer comprar","quer comprar","deseja comprar","interesse"] }
+    ];
+    function findField(label){
+      return fields.find(function(item){ return item.labels.indexOf(label) !== -1; });
+    }
+    function findFieldAtStart(line){
+      var normalizedLine = normalizeOcrLabel(line);
+      return fields.find(function(item){
+        return item.labels.some(function(label){
+          return normalizedLine === label || normalizedLine.indexOf(label + " ") === 0;
+        });
+      });
+    }
+    function isOcrLabelOrSection(line){
+      var normalizedLine = normalizeOcrLabel(line);
+      var otherLabels = ["email","e mail","sexo","estado civil","localizacao","informacoes adicionais","dados pessoais","cadastro pessoa fisica"];
+      return !!findFieldAtStart(line) || !!findField(normalizedLine) ||
+        otherLabels.some(function(label){ return normalizedLine === label || normalizedLine.indexOf(label + " ") === 0; });
+    }
+    function valueAfterFieldLabel(line, field){
+      var accentPatterns = {
+        a:"[aáàâãä]", e:"[eéèêë]", i:"[iíìîï]", o:"[oóòôõö]", u:"[uúùûü]", c:"[cç]"
+      };
+      var labelPattern = field.labels.slice().sort(function(a,b){ return b.length - a.length; }).map(function(label){
+        return label.split("").map(function(character){
+          if(character === " ") return "[\\s*._-]+";
+          return accentPatterns[character] || character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }).join("");
+      }).join("|");
+      var match = String(line).match(new RegExp("^\\s*(?:" + labelPattern + ")\\s*[*:：–—-]*\\s*(.*)$", "i"));
+      return match ? match[1].trim() : "";
+    }
+    lines.forEach(function(line, index){
+      var match = line.match(/^\s*([^:–—-]{2,45})\s*[:：–—-]\s*(.*?)\s*$/);
+      var field = findFieldAtStart(line);
+      if(!field && match) field = findField(normalizeOcrLabel(match[1]));
+      if(!field) field = findField(normalizeOcrLabel(line));
+      if(!field || values[field.name]) return;
+      var value = valueAfterFieldLabel(line, field);
+      if(!value && match) value = match[2].trim();
+      if(!value){
+        for(var nextIndex = index + 1; nextIndex < Math.min(lines.length, index + 4); nextIndex++){
+          var nextLine = lines[nextIndex].trim();
+          if(!nextLine) continue;
+          if(isOcrLabelOrSection(nextLine) || (field.name === "name" && /[@\d]/.test(nextLine))) break;
+          value = nextLine;
+          break;
+        }
+      }
+      if(value) values[field.name] = value;
+    });
+
+    var fullText = String(text || "");
+    if(!values.cpf){
+      var cpfMatch = fullText.match(/\b\d{3}\.?\s?\d{3}\.?\s?\d{3}[-\s]?\d{2}\b/);
+      if(cpfMatch) values.cpf = cpfMatch[0].replace(/\s/g, "");
+    }
+    if(!values.phone){
+      var phoneMatch = fullText.match(/(?:\+?55[\s.-]*)?(?:\(?\d{2}\)?[\s.-]*)?9?\d{4}[\s.-]?\d{4}\b/);
+      if(phoneMatch) values.phone = phoneMatch[0].trim();
+    }
+    ["birthday","deliveryDate"].forEach(function(field){
+      if(!values[field]) return;
+      var value = values[field].trim();
+      var dateMatch = value.match(/\b(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})\b/);
+      var isoMatch = value.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+      var year, month, day;
+      if(dateMatch){
+        day = Number(dateMatch[1]);
+        month = Number(dateMatch[2]);
+        year = Number(dateMatch[3]);
+      } else if(isoMatch){
+        year = Number(isoMatch[1]);
+        month = Number(isoMatch[2]);
+        day = Number(isoMatch[3]);
+      } else {
+        delete values[field];
+        return;
+      }
+      var parsedDate = new Date(year, month - 1, day);
+      if(parsedDate.getFullYear() !== year || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day){
+        delete values[field];
+        return;
+      }
+      values[field] = year + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    });
+    return values;
+  }
+
+  function getClientOcrWorker(){
+    if(clientOcrWorkerPromise) return clientOcrWorkerPromise;
+    clientOcrWorkerPromise = loadClientOcrLibrary().then(function(Tesseract){
+      return Tesseract.createWorker("por", 1, {
+        workerPath:CLIENT_OCR_CDN + "/dist/worker.min.js",
+        corePath:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+        langPath:"https://tessdata.projectnaptha.com/4.0.0",
+        logger:function(message){
+          if(message && message.status === "recognizing text" && typeof message.progress === "number"){
+            el["client-ocr-status"].textContent = "Lendo a imagem: " + Math.round(message.progress * 100) + "%";
+          } else if(message && message.status === "loading language traineddata"){
+            el["client-ocr-status"].textContent = "Baixando o idioma português para leitura local...";
+          } else if(message && message.status === "loading tesseract core"){
+            el["client-ocr-status"].textContent = "Carregando o mecanismo de leitura...";
+          }
+        }
+      });
+    }).catch(function(error){
+      clientOcrWorkerPromise = null;
+      throw error;
+    });
+    return clientOcrWorkerPromise;
+  }
+
+  function setClientOcrStatus(message, isError){
+    var status = el["client-ocr-status"];
+    status.textContent = message;
+    status.classList.toggle("error", !!isError);
+  }
+
+  el["btn-client-ocr"].addEventListener("click", function(){
+    el["client-ocr-input"].click();
+  });
+  el["client-ocr-input"].addEventListener("change", async function(event){
+    var file = event.target.files && event.target.files[0];
+    event.target.value = "";
+    if(!file) return;
+    el["client-ocr-result"].style.display = "none";
+    el["client-ocr-text"].value = "";
+    if(!file.type || file.type.indexOf("image/") !== 0){
+      setClientOcrStatus("Escolha um arquivo de imagem para fazer a leitura.", true);
+      return;
+    }
+    if(file.size > 15 * 1024 * 1024){
+      setClientOcrStatus("A imagem é muito grande. Escolha uma imagem com até 15 MB.", true);
+      return;
+    }
+    var button = el["btn-client-ocr"];
+    button.disabled = true;
+    setClientOcrStatus("Preparando leitura OCR em português...", false);
+    try{
+      var worker = await getClientOcrWorker();
+      var result = await worker.recognize(file);
+      var recognizedText = result && result.data && result.data.text ? result.data.text.trim() : "";
+      if(!recognizedText){
+        setClientOcrStatus("Não encontrei texto legível. Tente uma imagem mais nítida.", true);
+        return;
+      }
+      el["client-ocr-text"].value = recognizedText;
+      el["client-ocr-result"].style.display = "block";
+      var suggestions = parseClientOcrText(recognizedText);
+      var targets = {
+        name:"client-name",
+        cpf:"client-cpf",
+        birthday:"client-birthday",
+        deliveryDate:"client-delivery-date",
+        phone:"client-phone",
+        purchase:"client-purchase",
+        wantsToBuy:"client-wants-to-buy"
+      };
+      var filled = 0;
+      var preserved = 0;
+      Object.keys(targets).forEach(function(key){
+        var input = el[targets[key]];
+        if(!suggestions[key]) return;
+        if(input.value.trim()){
+          preserved++;
+          return;
+        }
+        input.value = suggestions[key];
+        filled++;
+      });
+      var statusMessage;
+      if(filled){
+        statusMessage = filled + " campo(s) preenchido(s) para revisar. Confira os dados antes de salvar.";
+        if(preserved) statusMessage += " " + preserved + " campo(s) já preenchido(s) foram mantidos.";
+      } else if(preserved){
+        statusMessage = "Os campos reconhecidos já tinham valores e foram mantidos sem alterações. Confira o texto reconhecido.";
+      } else {
+        statusMessage = "Texto reconhecido, mas não encontrei campos identificáveis. Confira o texto abaixo e preencha os dados manualmente.";
+      }
+      setClientOcrStatus(statusMessage, false);
+    }catch(error){
+      console.error("Falha ao reconhecer os dados da imagem:", error);
+      setClientOcrStatus(error && error.message ? error.message : "Não foi possível ler a imagem. Tente novamente.", true);
+    }finally{
+      button.disabled = false;
+    }
+  });
+
   function renderCategoryDropdown(){
     var select = el["client-category-select"];
     var currentVal = select.value;
@@ -4962,8 +5223,31 @@
     el["client-rating-select"].value = "bom";
     el["client-photo-input"].value = "";
     el["client-photo-preview"].style.display = "none";
+    el["client-ocr-input"].value = "";
+    el["client-ocr-status"].textContent = "";
+    el["client-ocr-status"].classList.remove("error");
+    el["client-ocr-result"].style.display = "none";
+    el["client-ocr-text"].value = "";
     renderCategoryDropdown();
   }
+
+  function openClientDatePicker(input){
+    if(typeof input.showPicker === "function"){
+      try{
+        input.showPicker();
+        return;
+      }catch(error){
+        console.warn("O navegador não abriu o calendário nativo:", error);
+      }
+    }
+    input.focus();
+  }
+  el["btn-client-birthday-calendar"].addEventListener("click", function(){
+    openClientDatePicker(el["client-birthday"]);
+  });
+  el["btn-client-delivery-calendar"].addEventListener("click", function(){
+    openClientDatePicker(el["client-delivery-date"]);
+  });
 
   function setClientDeliveryCompleted(client, completed){
     if(!client || !client.deliveryDate) return;
