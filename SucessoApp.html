@@ -13,6 +13,7 @@
     --cyan:#35e6ff; --purple:#b366ff; --lime:#b6ff3c; --red:#ff3d6e; --amber:#ffb23c;
     --text:#eef0fa; --dim:#82829c; --dim-2:#54546e;
   }
+
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
   body{
@@ -47,6 +48,26 @@
   .xp-total{ color:var(--lime); }
 
   .tab-bar{ display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .tab-btn{ position:relative; display:inline-flex; align-items:center; gap:7px; }
+  .tab-drag-handle{ color:var(--dim-2); font-size:0.72rem; line-height:1; cursor:grab; touch-action:none; user-select:none; opacity:0.65; }
+  .tab-drag-handle:hover{ color:var(--cyan); opacity:1; }
+  .tab-btn.tab-reordering{ opacity:0.5; }
+  .tab-visibility-settings{ margin-left:auto; align-self:center; margin-bottom:5px; width:38px; height:36px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--dim); font-size:1.05rem; }
+  .tab-visibility-settings:hover,.tab-visibility-settings[aria-expanded="true"]{ border-color:var(--cyan); color:var(--cyan); }
+  .window-visibility-list{ display:flex; flex-direction:column; gap:7px; max-height:55vh; overflow:auto; margin-top:14px; }
+  .window-visibility-option{ display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line-soft); border-radius:7px; background:rgba(255,255,255,0.025); font-size:0.82rem; cursor:pointer; }
+  .window-visibility-option input{ width:17px; height:17px; accent-color:var(--cyan); flex-shrink:0; }
+  .window-visibility-empty{ color:var(--dim); font-size:0.82rem; padding:10px 2px; }
+  .window-hidden-by-settings{ display:none !important; }
+  .today-agenda{ margin-bottom:20px; }
+  .today-agenda-intro{ color:var(--dim); font-size:0.8rem; margin:-4px 0 12px; }
+  .today-agenda-section + .today-agenda-section{ margin-top:16px; }
+  .today-agenda-section h3{ font-size:0.9rem; margin-bottom:5px; }
+  .today-agenda-section.overdue h3{ color:var(--red); }
+  .today-agenda-section.today h3{ color:var(--cyan); }
+  .today-agenda-section.unscheduled h3{ color:var(--amber); }
+  .today-agenda-empty{ color:var(--dim); font-size:0.78rem; padding:8px 0; }
+  .backup-preview{ background:rgba(53,230,255,0.05); border:1px solid var(--line); border-radius:8px; padding:11px 13px; color:var(--dim); font-size:0.78rem; line-height:1.6; white-space:pre-line; }
   .tab-btn{
     padding:11px 18px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.9rem;
     letter-spacing:0.03em; color:var(--dim); border-bottom:2px solid transparent; transition:color .15s, border-color .15s;
@@ -67,15 +88,106 @@
   .global-search-result strong{ color:var(--text); font-size:0.82rem; }
   .global-search-result span,.global-search-empty{ color:var(--dim); font-size:0.7rem; }
   .dashboard-extras{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; margin-bottom:20px; align-items:start; }
-  .dashboard-widget{ grid-column:span var(--dashboard-width, 4); min-width:0; height:var(--dashboard-height, 320px); overflow:auto; align-self:start; }
+  .dashboard-widget{ position:relative; grid-column:span var(--dashboard-width, 4); min-width:0; height:var(--dashboard-height, 320px); overflow:auto; align-self:start; }
   .dashboard-widget.dragging{ opacity:0.4; }
-  .dashboard-widget-controls{ display:flex; align-items:center; justify-content:flex-end; gap:4px; margin-left:auto; }
-  .dashboard-widget-controls button{ min-width:27px; height:25px; padding:0 5px; border:1px solid var(--line); border-radius:5px; color:var(--dim); font-size:0.66rem; white-space:nowrap; }
-  .dashboard-widget-controls button:hover{ color:var(--cyan); border-color:var(--cyan); }
-  .dashboard-widget-drag{ cursor:grab; touch-action:none; user-select:none; }
+  .dashboard-widget-controls{ display:flex; align-items:center; justify-content:flex-end; margin-left:auto; }
+  .dashboard-widget-drag{ cursor:grab; touch-action:none; user-select:none; font-size:0.9rem !important; }
   .dashboard-widget-drag:active{ cursor:grabbing; }
-  @media(max-width:1000px){ .dashboard-widget{ grid-column:span 6 !important; } }
-  @media(max-width:700px){ .dashboard-widget{ grid-column:span 12 !important; } .dashboard-widget-controls{ flex-wrap:wrap; } }
+  .dashboard-widget-resize{ position:absolute; right:3px; bottom:3px; z-index:2; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; border-radius:5px; color:var(--dim-2); font-size:1rem; line-height:1; cursor:nwse-resize; touch-action:none; user-select:none; }
+  .dashboard-widget-resize:hover,.dashboard-widget-resize:focus-visible{ border-color:var(--cyan); background:var(--panel); color:var(--cyan); }
+  .dashboard-widget.resizing{ opacity:0.88; user-select:none; }
+  .window-control-group{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .window-drag-handle{ display:inline-flex; align-items:center; justify-content:center; min-width:26px; min-height:26px; padding:2px 5px; border-radius:5px; color:var(--dim-2); cursor:grab; touch-action:none; user-select:none; }
+  .window-drag-handle:hover{ color:var(--cyan); background:rgba(53,230,255,0.07); }
+  .window-drag-handle:active{ cursor:grabbing; }
+  .window-resize-handle{ position:absolute; right:3px; bottom:3px; z-index:3; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; border-radius:5px; color:var(--dim-2); font-size:1rem; line-height:1; cursor:nwse-resize; touch-action:none; user-select:none; }
+  .window-resize-handle:hover,.window-resize-handle:focus-visible{ border-color:var(--cyan); background:var(--panel); color:var(--cyan); }
+  .window-layout-resizing{ opacity:0.9; user-select:none; }
+  .window-layout-dragging{ opacity:0.7; }
+  .card[data-window-id]:not(.dashboard-widget){ grid-column:span var(--window-columns,12); min-width:0 !important; width:100% !important; height:var(--window-height,auto); position:relative; }
+  .card[data-window-id].collapsed > :not(.card-head){ display:none !important; }
+  .card[data-window-id].collapsed .window-resize-handle{ display:none; }
+  .card[data-window-id].collapsed:not(.dashboard-widget){
+    grid-column:span 2 !important; width:max-content !important; min-width:44px !important; max-width:220px !important;
+    height:44px !important; min-height:44px !important; max-height:44px !important; padding:4px 8px 4px 4px !important;
+    border-radius:24px; overflow:hidden;
+  }
+  .card[data-window-id].collapsed .card-head{
+    width:max-content; max-width:100%; height:34px; min-height:34px; margin:0; flex-wrap:nowrap; justify-content:flex-start; gap:6px;
+  }
+  .card[data-window-id].collapsed .card-head-left,
+  .card[data-window-id].collapsed .card-head-actions > :not(.btn-minimize),
+  .card[data-window-id].collapsed .card-head > :not(.card-head-left):not(.card-head-actions):not(.dashboard-widget-controls):not(.btn-minimize){ display:none !important; }
+  .card[data-window-id].collapsed .card-head-actions{ width:auto; height:34px; margin:0; justify-content:flex-start; }
+  .card[data-window-id].collapsed .btn-minimize,
+  .dashboard-widget.collapsed .btn-minimize,
+  .board-list.collapsed .btn-minimize{
+    width:max-content; max-width:198px; height:30px; min-width:30px; padding:0 7px 0 3px; gap:6px;
+    border-radius:18px; flex:0 0 auto;
+  }
+  .minimized-window-icon{ display:inline-flex; align-items:center; justify-content:center; flex:0 0 22px; width:22px; height:22px; border:1px solid var(--line); border-radius:50%; font-size:0.9rem; }
+  .minimized-window-label{ display:none; }
+  [data-window-id].collapsed .minimized-window-label{ display:inline; overflow:hidden; max-width:164px; font-size:0.74rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+  .dashboard-widget.collapsed{
+    grid-column:span 2 !important; width:max-content !important; min-width:44px !important; max-width:220px !important;
+    height:44px !important; min-height:44px !important; max-height:44px !important; padding:4px 8px 4px 4px !important;
+    border-radius:24px; overflow:hidden;
+  }
+  .dashboard-widget.collapsed .card-head{
+    width:max-content; max-width:100%; height:34px; min-height:34px; margin:0; flex-wrap:nowrap; justify-content:flex-start; gap:6px;
+  }
+  .dashboard-widget.collapsed .card-head > :not(.dashboard-widget-controls){ display:none !important; }
+  .dashboard-widget.collapsed .dashboard-widget-controls{ width:auto; height:34px; margin:0; justify-content:flex-start; }
+  .dashboard-widget.collapsed .dashboard-widget-controls > :not(.btn-minimize){ display:none !important; }
+  .board-list[data-window-id]{ display:flex; flex-direction:column; flex:0 0 var(--window-width,320px); min-width:220px; width:var(--window-width,320px); min-height:220px; height:var(--window-height,auto); overflow:hidden; position:relative; }
+  .board-list[data-window-id] .board-cards{ flex:1 1 auto; min-height:0; overflow-y:auto; }
+  .board-list[data-window-id] .board-add-card-row{ flex:0 0 auto; }
+  .board-list.collapsed .board-cards,.board-list.collapsed .board-add-card-row{ display:none; }
+  .board-list.collapsed .window-resize-handle{ display:none; }
+  .board-list[data-window-id].collapsed{
+    flex:0 0 auto !important; width:max-content !important; min-width:44px !important; max-width:220px !important;
+    height:44px !important; min-height:44px !important; max-height:44px !important; padding:4px 8px 4px 4px !important;
+    border-radius:24px;
+  }
+  .board-list.collapsed .board-list-head{ width:max-content; max-width:100%; height:34px; min-height:34px; margin:0; justify-content:flex-start; gap:6px; }
+  .board-list.collapsed .board-list-head > :not(.btn-minimize){ display:none !important; }
+  .grid-main,.clients-layout,.plants-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+  .grid-main > .col,.clients-layout > .col,.plants-layout > .col{ display:contents; }
+  .clients-layout{ display:contents; }
+  #tab-clients{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+  #tab-clients > .clients-dashboard-extras{ display:contents; }
+  #tab-clients > .clients-layout{ display:contents; }
+  #tab-clients .dashboard-widget{ height:var(--dashboard-height,320px); }
+  #tab-clients .dashboard-widget[data-dashboard-widget="today"]{ --dashboard-width:12; }
+  .notebook-layout{ display:contents; }
+  #tab-diary{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+  #tab-diary > .card[data-window-id]{ grid-column:span var(--window-columns,12); }
+  #tab-diary [data-card="diary-folders"]{ --window-columns:3; }
+  #tab-diary [data-card="diary-notes"]{ --window-columns:9; }
+  #tab-board{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+  #tab-board > .board-toolbar,#tab-board > #board-view,#tab-board > #calendar-view,#tab-board > #history-view{ grid-column:1 / -1; }
+  #tab-board .history-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+  #tab-board .history-layout > .card[data-window-id]{ --window-columns:6; }
+  #tab-board .calendar-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+  #tab-board .calendar-layout > .calendar-sidebar{ grid-column:span 3; }
+  #tab-board .calendar-layout > .calendar-main{ grid-column:span 9; }
+  #tab-board .board-lists{ display:flex; gap:14px; overflow-x:auto; overflow-y:visible; padding-bottom:14px; align-items:flex-start; }
+  #tab-board .board-list{ flex:0 0 var(--window-width,320px); }
+  #tab-board .board-add-list{ order:2147483647 !important; flex:0 0 260px; width:260px; }
+  @media(max-width:700px){
+    #tab-objectives .card[data-window-id]:not(.dashboard-widget),
+    #tab-clients .card[data-window-id]:not(.dashboard-widget),
+    #tab-plants .card[data-window-id]:not(.dashboard-widget),
+    #tab-diary .card[data-window-id]:not(.dashboard-widget){ grid-column:span 12 !important; }
+  }
+  @media(max-width:1000px){ .dashboard-widget{ grid-column:span var(--dashboard-width,4); } }
+  @media(max-width:700px){
+    .dashboard-widget{ grid-column:span 12 !important; }
+    #tab-diary [data-card="diary-folders"],#tab-diary [data-card="diary-notes"]{ grid-column:span 12 !important; }
+    #tab-board .history-layout > .card[data-window-id]{ grid-column:span 12 !important; }
+    #tab-board .calendar-layout > .calendar-sidebar,#tab-board .calendar-layout > .calendar-main{ grid-column:span 12; }
+    .window-resize-handle,.dashboard-widget-resize{ width:34px; height:34px; font-size:1.1rem; }
+  }
   .dashboard-extra-list{ display:flex; flex-direction:column; gap:6px; max-height:245px; overflow:auto; }
   .dashboard-extra-item{ display:flex; align-items:center; justify-content:space-between; width:100%; gap:10px; padding:7px 9px; background:rgba(255,255,255,0.025); border:1px solid var(--line-soft); border-radius:7px; text-align:left; }
   .dashboard-extra-item:hover{ border-color:var(--cyan); }
@@ -579,6 +691,56 @@
 
   footer{ text-align:center; color:var(--dim-2); font-size:0.75rem; margin-top:34px; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; } }
+  @media (max-width:640px){
+    .shell{ padding:16px 12px 36px; }
+    .topbar{ gap:12px; margin-bottom:14px; }
+    .overall{ gap:10px; padding:8px 12px 8px 8px; }
+    .ring{ width:46px; height:46px; }
+    .ring::before{ width:36px; height:36px; }
+    .tab-bar{ flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; gap:3px; }
+    .tab-btn{ flex:0 0 auto; min-height:44px; padding:10px 12px; }
+    .tab-drag-handle{ font-size:0.85rem; padding:7px 2px; }
+    .tab-visibility-settings{ flex:0 0 44px; width:44px; min-height:44px; position:sticky; right:0; margin-left:0; background:var(--panel); }
+    .backup-bar{ gap:8px; }
+    .backup-bar > .btn-ghost{ min-height:44px; padding:10px 12px; }
+    .backup-bar #btn-zero-xp{ margin-left:0 !important; }
+    .card{ min-width:0; }
+    .card-head{ align-items:flex-start; gap:8px; }
+    .card-head h2{ overflow-wrap:anywhere; }
+    .card-head-actions{ flex-wrap:wrap; }
+    .field input[type="text"], .field input[type="date"], .field input[type="search"], .field textarea, .field select,
+    .field input[type="tel"], .field input[type="number"], .field input[type="datetime-local"]{ min-height:44px; font-size:16px; }
+    .date-input-row{ flex-wrap:wrap; }
+    .date-input-row > input{ flex:1 1 180px; min-width:0; }
+    .date-input-row > button{ min-height:44px; }
+    .todo-input-row{ gap:8px; }
+    .todo-input-row input[type="text"]{ min-height:44px; flex-basis:100%; font-size:16px; }
+    .todo-input-row > button{ min-height:44px; flex:1; }
+    .todo-input-row .btn-submit{ padding:8px 12px; }
+    .btn-submit,.btn-secondary,.btn-ghost{ min-height:44px; }
+    .btn-icon,.btn-minimize,.todo-check{ min-width:40px; min-height:40px; }
+    .client-row{ align-items:flex-start; }
+    .client-actions{ gap:7px; }
+    .client-actions button,.client-actions a,.client-details-tools button,.client-details-tools a{ min-height:40px; }
+    .dashboard-reminder-done{ min-height:40px; padding:8px 10px; }
+    .dashboard-widget-resize{ width:32px; height:32px; font-size:1.15rem; }
+    .season-card{ min-width:0; }
+    .modal-overlay{ align-items:flex-start; padding:12px; overflow-y:auto; }
+    .modal-box{ width:100%; max-width:480px; max-height:calc(100vh - 24px); max-height:calc(100dvh - 24px); overflow-y:auto; padding:18px 14px; margin:auto 0; }
+    .modal-actions{ flex-wrap:wrap; }
+    .modal-actions > button{ min-width:min(100%, 120px); min-height:44px; }
+    .window-visibility-option{ min-height:44px; }
+  }
+  #tab-objectives .grid-main,#tab-plants .plants-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+  #tab-board .board-lists{ display:flex; gap:14px; overflow-x:auto; overflow-y:visible; padding-bottom:14px; align-items:flex-start; }
+  #tab-diary .notebook-layout{ display:contents; }
+  @media(max-width:960px){
+    #tab-objectives .grid-main,#tab-plants .plants-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
+  }
+  @media(max-width:700px){
+    #tab-board .board-list[data-window-id]{ flex-basis:var(--window-width,280px); }
+    #tab-board .board-add-list{ flex-basis:240px; width:240px; }
+  }
 </style>
 </head>
 <body>
@@ -606,6 +768,7 @@
     <div class="field">
       <textarea id="backup-textarea" rows="8" placeholder="Seus dados aparecerão aqui..." style="font-family:'JetBrains Mono',monospace; font-size:0.78rem;"></textarea>
     </div>
+    <div id="backup-preview" class="backup-preview" style="display:none;" role="status" aria-live="polite"></div>
     <input id="backup-file-input" type="file" accept=".json,application/json" style="display:none;">
     <div class="modal-actions" style="margin-top:14px;">
       <button id="btn-backup-download" type="button" class="btn-secondary" style="border-color:var(--lime); color:var(--lime);">💾 Baixar arquivo</button>
@@ -724,6 +887,18 @@
   </div>
 </div>
 
+<div id="window-visibility-modal" class="modal-overlay">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="window-visibility-title">
+    <h2 id="window-visibility-title">Janelas desta aba</h2>
+    <p id="window-visibility-description" style="color:var(--dim); font-size:0.82rem; margin-top:5px;">Escolha quais janelas deseja deixar visíveis.</p>
+    <div id="window-visibility-list" class="window-visibility-list"></div>
+    <div class="modal-actions">
+      <button id="btn-window-visibility-reset" type="button" class="btn-secondary">Mostrar todas</button>
+      <button id="btn-window-visibility-close" type="button" class="btn-submit">Concluído</button>
+    </div>
+  </div>
+</div>
+
 <input id="list-color-input" type="color" style="display:none;">
 
 <div class="shell">
@@ -740,11 +915,12 @@
   </header>
 
   <div class="tab-bar">
-    <button id="tab-btn-objectives" class="tab-btn active" type="button">🎯 Objetivos</button>
-    <button id="tab-btn-diary" class="tab-btn" type="button">📓 Diário</button>
-    <button id="tab-btn-board" class="tab-btn" type="button">📋 Progressão</button>
-    <button id="tab-btn-clients" class="tab-btn" type="button">👥 Clientes</button>
-    <button id="tab-btn-plants" class="tab-btn" type="button">🌿 Plantações</button>
+    <button id="tab-btn-objectives" class="tab-btn active" type="button"><span class="tab-drag-handle" aria-label="Arrastar aba">⠿</span><span>🎯 Objetivos</span></button>
+    <button id="tab-btn-diary" class="tab-btn" type="button"><span class="tab-drag-handle" aria-label="Arrastar aba">⠿</span><span>📓 Diário</span></button>
+    <button id="tab-btn-board" class="tab-btn" type="button"><span class="tab-drag-handle" aria-label="Arrastar aba">⠿</span><span>📋 Progressão</span></button>
+    <button id="tab-btn-clients" class="tab-btn" type="button"><span class="tab-drag-handle" aria-label="Arrastar aba">⠿</span><span>👥 Clientes</span></button>
+    <button id="tab-btn-plants" class="tab-btn" type="button"><span class="tab-drag-handle" aria-label="Arrastar aba">⠿</span><span>🌿 Plantações</span></button>
+    <button id="btn-window-visibility" class="tab-visibility-settings" type="button" aria-label="Configurar janelas desta aba" title="Mostrar ou ocultar janelas" aria-haspopup="dialog" aria-expanded="false">⚙</button>
   </div>
 
   <div class="global-search">
@@ -764,21 +940,6 @@
       <span id="save-status" class="save-status">Salvo</span>
       <span id="backup-reminder" class="backup-reminder" style="display:none;"></span>
       <button id="btn-zero-xp" type="button" class="btn-ghost" style="margin-left:auto;">🔄 Zerar XP</button>
-    </div>
-
-    <div class="dashboard-extras">
-      <section class="card dashboard-widget" data-dashboard-widget="summary">
-        <div class="card-head"><h2>📊 Resumo dos últimos 7 dias</h2></div>
-        <div id="weekly-summary" class="weekly-summary-stats"></div>
-      </section>
-      <section class="card dashboard-widget" data-dashboard-widget="agenda">
-        <div class="card-head"><h2>⏰ Agenda próxima</h2></div>
-        <div id="upcoming-reminders" class="dashboard-extra-list"></div>
-      </section>
-      <section class="card dashboard-widget" data-dashboard-widget="birthdays">
-        <div class="card-head"><h2>🎂 Próximos aniversários</h2></div>
-        <div id="objectives-upcoming-birthdays" class="dashboard-extra-list"></div>
-      </section>
     </div>
 
     <main class="grid-main" id="grid-main-objectives">
@@ -918,7 +1079,7 @@
 
   <div id="tab-diary" class="tab-panel" style="display:none;">
     <div class="notebook-layout">
-      <section class="card">
+      <section class="card" data-card="diary-folders">
         <div class="card-head"><h2>📁 Pastas</h2></div>
         <div class="card-body">
           <form id="notebook-folder-form" class="notebook-create-folder">
@@ -929,7 +1090,7 @@
           <p id="notebook-empty-folders" class="notebook-empty">Crie uma pasta para organizar suas anotações.</p>
         </div>
       </section>
-      <section class="card">
+      <section class="card" data-card="diary-notes">
         <div class="card-head">
           <h2 id="notebook-active-folder-title">📝 Anotações</h2>
         </div>
@@ -980,13 +1141,13 @@
       <button id="btn-board-settings" type="button" class="btn-ghost btn-small">⚙ Configurações</button>
     </div>
 
-    <div id="board-view">
+    <div id="board-view" data-visibility-window="board-view" data-visibility-label="Quadro de listas">
       <div id="board-lists" class="board-lists"></div>
     </div>
 
     <div id="calendar-view" style="display:none;">
       <div class="calendar-layout">
-        <div class="calendar-sidebar">
+        <div class="calendar-sidebar" data-visibility-window="board-calendar-sidebar" data-visibility-label="Painel lateral do calendário">
           <div class="cal-side-section">
             <h3>📅 Já datadas</h3>
             <div id="dated-cards-list" class="cal-side-list"></div>
@@ -996,7 +1157,7 @@
             <div id="undated-cards-list" class="cal-side-list"></div>
           </div>
         </div>
-        <div class="calendar-main">
+        <div class="calendar-main" data-visibility-window="board-calendar-main" data-visibility-label="Calendário mensal">
           <div class="calendar-nav">
             <button id="btn-cal-prev" type="button" class="btn-icon" aria-label="Mês anterior">‹</button>
             <h3 id="calendar-month-label">—</h3>
@@ -1023,6 +1184,27 @@
   </div>
 
   <div id="tab-clients" class="tab-panel" style="display:none;">
+    <div class="dashboard-extras clients-dashboard-extras">
+      <section class="card dashboard-widget" data-dashboard-widget="today" data-visibility-window="clients-today-agenda" data-visibility-label="O que preciso fazer hoje?">
+        <div class="card-head"><h2>📌 O que preciso fazer hoje?</h2></div>
+        <div class="card-body">
+          <p class="today-agenda-intro">Pendências vencidas, compromissos de hoje e tarefas sem prazo.</p>
+          <div id="today-agenda-content" aria-live="polite"></div>
+        </div>
+      </section>
+      <section class="card dashboard-widget" data-dashboard-widget="summary">
+        <div class="card-head"><h2>📊 Resumo dos últimos 7 dias</h2></div>
+        <div id="weekly-summary" class="weekly-summary-stats"></div>
+      </section>
+      <section class="card dashboard-widget" data-dashboard-widget="birthdays">
+        <div class="card-head"><h2>🎂 Próximos aniversários</h2></div>
+        <div id="objectives-upcoming-birthdays" class="dashboard-extra-list"></div>
+      </section>
+      <section class="card dashboard-widget" data-dashboard-widget="agenda">
+        <div class="card-head"><h2>⏰ Agenda próxima</h2></div>
+        <div id="upcoming-reminders" class="dashboard-extra-list"></div>
+      </section>
+    </div>
     <main class="clients-layout" id="grid-main-clients">
 
       <section class="col" id="clients-col-left">
@@ -1066,6 +1248,13 @@
               <div class="date-input-row">
                 <input id="client-delivery-date" type="date">
                 <button id="btn-client-delivery-calendar" class="date-picker-button" type="button" aria-label="Abrir calendário da entrega" title="Abrir calendário">📅</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="client-post-sale-date">Data do pós-venda (padrão: 7 dias após o cadastro)</label>
+              <div class="date-input-row">
+                <input id="client-post-sale-date" type="date">
+                <button id="btn-client-post-sale-calendar" class="date-picker-button" type="button" aria-label="Abrir calendário do pós-venda" title="Abrir calendário">📅</button>
               </div>
             </div>
             <div class="field"><label for="client-phone">Telefone</label><input id="client-phone" type="text" placeholder="(00) 00000-0000" maxlength="20"></div>
@@ -1434,10 +1623,11 @@
     tasks.forEach(function(t){ t.completions = []; t.showInCalendar = true; t.confirmMode = "single"; });
     return {
       pillarsMeta: buildDefaultPillarsMeta(), pillars: pillars, tasks: tasks, history: [],
-      todos: [], diaryEntries: [], notebookFolders: [], activeNotebookFolderId: null, uiCollapsed: {}, cardOrder: null, clientsCardOrder: null, plantsCardOrder: null, dashboardLayout: null, activeTab: "objectives",
+      todos: [], diaryEntries: [], notebookFolders: [], activeNotebookFolderId: null, uiCollapsed: {}, hiddenWindows: {}, windowLayouts: {}, windowOrder: {}, tabOrder: null, cardOrder: null, clientsCardOrder: null, plantsCardOrder: null, dashboardLayout: null, activeTab: "objectives",
       board: { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", dueDate: null, cards: [] } ] },
       uiPrefs: { font: "default", bg: null },
       boardView: "board",
+      plantCalendarFilters: { last:true, next:true, season:true },
       clients: [],
       categories: ["Geral", "VIP", "Recorrente"],
       plants: [
@@ -1448,22 +1638,42 @@
   }
 
   function normalizeDashboardLayout(layout){
-    var ids = ["summary","agenda","birthdays"];
-    var defaultHeights = { summary:240, agenda:360, birthdays:360 };
+    var ids = ["today","summary","birthdays","agenda"];
+    var defaultWidths = { today:12, summary:4, birthdays:4, agenda:4 };
+    var defaultHeights = { today:320, summary:240, agenda:360, birthdays:360 };
     var source = layout && typeof layout === "object" ? layout : {};
     var order = Array.isArray(source.order) ? source.order.filter(function(id, index, items){
       return ids.indexOf(id) !== -1 && items.indexOf(id) === index;
     }) : [];
+    if(order.indexOf("today") === -1) order.unshift("today");
     ids.forEach(function(id){ if(order.indexOf(id) === -1) order.push(id); });
     var widths = {};
     var heights = {};
     ids.forEach(function(id){
       var width = source.widths && Number(source.widths[id]);
       var height = source.heights && Number(source.heights[id]);
-      widths[id] = isFinite(width) ? Math.max(4, Math.min(12, Math.round(width))) : 4;
+      widths[id] = isFinite(width) ? Math.max(3, Math.min(12, Math.round(width))) : defaultWidths[id];
       heights[id] = isFinite(height) ? Math.max(180, Math.min(600, Math.round(height / 40) * 40)) : defaultHeights[id];
     });
     return { order:order, widths:widths, heights:heights };
+  }
+
+  function normalizeTabOrder(order){
+    var ids = ["objectives","diary","board","clients","plants"];
+    var normalized = Array.isArray(order) ? order.filter(function(id,index,items){
+      return ids.indexOf(id) !== -1 && items.indexOf(id) === index;
+    }) : [];
+    ids.forEach(function(id){ if(normalized.indexOf(id) === -1) normalized.push(id); });
+    return normalized;
+  }
+
+  function normalizePlantCalendarFilters(filters){
+    var source = filters && typeof filters === "object" && !Array.isArray(filters) ? filters : {};
+    return {
+      last: typeof source.last === "boolean" ? source.last : true,
+      next: typeof source.next === "boolean" ? source.next : true,
+      season: typeof source.season === "boolean" ? source.season : true
+    };
   }
 
   function loadState(){
@@ -1497,10 +1707,19 @@
       });
       if(!parsed.activeNotebookFolderId) parsed.activeNotebookFolderId = null;
       if(!parsed.uiCollapsed) parsed.uiCollapsed = {};
+      if(!parsed.windowLayouts || typeof parsed.windowLayouts !== "object" || Array.isArray(parsed.windowLayouts)) parsed.windowLayouts = {};
+      if(!parsed.windowOrder || typeof parsed.windowOrder !== "object" || Array.isArray(parsed.windowOrder)) parsed.windowOrder = {};
+      if(!parsed.hiddenWindows || typeof parsed.hiddenWindows !== "object" || Array.isArray(parsed.hiddenWindows)) parsed.hiddenWindows = {};
+      parsed.tabOrder = normalizeTabOrder(parsed.tabOrder);
+      ["objectives","diary","board","clients","plants"].forEach(function(tab){
+        if(!Array.isArray(parsed.hiddenWindows[tab])) parsed.hiddenWindows[tab] = [];
+        parsed.hiddenWindows[tab] = parsed.hiddenWindows[tab].filter(function(id){ return typeof id === "string"; });
+      });
       if(typeof parsed.cardOrder === "undefined") parsed.cardOrder = null;
       if(typeof parsed.clientsCardOrder === "undefined") parsed.clientsCardOrder = null;
       if(typeof parsed.plantsCardOrder === "undefined") parsed.plantsCardOrder = null;
       parsed.dashboardLayout = normalizeDashboardLayout(parsed.dashboardLayout);
+      parsed.plantCalendarFilters = normalizePlantCalendarFilters(parsed.plantCalendarFilters);
       if(!parsed.activeTab) parsed.activeTab = "objectives";
       if(!parsed.board || !parsed.board.lists || !parsed.board.lists.length){
         parsed.board = { lists: [ { id: uid(), title: "Lista 1", color: "#14141f", cards: [] } ] };
@@ -1524,6 +1743,8 @@
           if(!c.rating) c.rating = "bom";
           if(typeof c.deliveryDate === "undefined") c.deliveryDate = null;
           if(typeof c.deliveryCompleted !== "boolean") c.deliveryCompleted = false;
+          if(typeof c.postSaleDate !== "string") c.postSaleDate = null;
+          if(typeof c.postSaleCompleted !== "boolean") c.postSaleCompleted = false;
           if(typeof c.wantsToBuy !== "string") c.wantsToBuy = "";
         });
       }
@@ -1601,8 +1822,8 @@
      "edit-confirm-single","edit-confirm-dual",
      "btn-edit-save","btn-edit-cancel","habit-calendar","empty-calendar",
      "storage-warning","btn-export","btn-import","save-status","backup-reminder","btn-zero-xp",
-     "global-search-input","global-search-results","weekly-summary","upcoming-reminders","objectives-upcoming-birthdays","client-report-stats","client-report-categories",
-     "backup-modal","backup-modal-title","backup-modal-desc","backup-textarea",
+     "global-search-input","global-search-results","weekly-summary","today-agenda-content","upcoming-reminders","objectives-upcoming-birthdays","client-report-stats","client-report-categories",
+     "backup-modal","backup-modal-title","backup-modal-desc","backup-textarea","backup-preview",
      "btn-backup-copy","btn-backup-download","btn-backup-select-file","backup-file-input","btn-backup-restore","btn-backup-close",
      "pillar-modal","pillar-manage-list","new-pillar-name","new-pillar-color","pillar-form-label",
      "btn-pillar-close","btn-pillar-add","btn-manage-pillars",
@@ -1615,7 +1836,7 @@
      "tab-btn-objectives","tab-btn-diary","tab-objectives","tab-diary",
      "tab-btn-board","tab-board","board-lists","btn-board-settings",
      "tab-btn-clients","tab-clients","client-form-title","client-photo-input","client-ocr-input","btn-client-ocr","client-ocr-status","client-ocr-result","client-ocr-text","client-photo-preview","client-photo-preview-img",
-     "client-name","client-cpf","client-birthday","client-delivery-date","btn-client-birthday-calendar","btn-client-delivery-calendar","client-phone","client-purchase","client-wants-to-buy","client-rating-select","btn-add-client",
+     "client-name","client-cpf","client-birthday","client-delivery-date","client-post-sale-date","btn-client-birthday-calendar","btn-client-delivery-calendar","btn-client-post-sale-calendar","client-phone","client-purchase","client-wants-to-buy","client-rating-select","btn-add-client",
      "client-photo-dropzone","client-photo-dropzone-text",
      "clients-list","clients-count","empty-clients","upcoming-birthdays-list","client-upcoming-filter",
      "btn-client-cal-prev","btn-client-cal-next","client-calendar-month-label","client-calendar-weekdays","client-calendar-grid",
@@ -1624,6 +1845,8 @@
      "dated-cards-list","undated-cards-list","btn-cal-prev","btn-cal-next",
      "calendar-month-label","calendar-weekdays","calendar-grid","list-color-input",
      "board-settings-modal","setting-font","setting-bg-color","btn-setting-reset","btn-setting-close",
+     "btn-window-visibility","window-visibility-modal","window-visibility-title","window-visibility-description",
+     "window-visibility-list","btn-window-visibility-reset","btn-window-visibility-close",
      "diary-input","btn-diary-save","diary-entries-list","empty-diary",
      "notebook-folder-form","notebook-folder-name","notebook-folders","notebook-empty-folders",
      "notebook-active-folder-title","notebook-note-form","notebook-note-title","notebook-note-text",
@@ -1694,13 +1917,181 @@
     if(tab === "clients") renderClientsTab();
     if(tab === "plants") renderPlantsTab();
     if(!skipSave){ state.activeTab = tab; saveState(); }
+    applyWindowVisibility(tab);
   }
 
-  el["tab-btn-objectives"].addEventListener("click", function(){ switchTab("objectives"); });
-  el["tab-btn-diary"].addEventListener("click", function(){ switchTab("diary"); });
-  el["tab-btn-board"].addEventListener("click", function(){ switchTab("board"); });
-  el["tab-btn-clients"].addEventListener("click", function(){ switchTab("clients"); });
-  el["tab-btn-plants"].addEventListener("click", function(){ switchTab("plants"); });
+  el["tab-btn-objectives"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("objectives"); });
+  el["tab-btn-diary"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("diary"); });
+  el["tab-btn-board"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("board"); });
+  el["tab-btn-clients"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("clients"); });
+  el["tab-btn-plants"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("plants"); });
+
+  var tabClickSuppressionUntil = 0;
+  function applyTabOrder(){
+    state.tabOrder = normalizeTabOrder(state.tabOrder);
+    var tabBar = document.querySelector(".tab-bar");
+    state.tabOrder.forEach(function(id){
+      var button = document.getElementById("tab-btn-" + id);
+      if(button) tabBar.insertBefore(button, document.getElementById("btn-window-visibility"));
+    });
+  }
+
+  function setupTabReordering(){
+    var tabBar = document.querySelector(".tab-bar");
+    applyTabOrder();
+    var dragState = null;
+    tabBar.querySelectorAll(".tab-btn").forEach(function(button){
+      var handle = button.querySelector(".tab-drag-handle");
+      if(!handle) return;
+      handle.title = "Arraste para reorganizar as abas";
+      handle.addEventListener("pointerdown", function(event){
+        if(event.button !== 0 || dragState) return;
+        dragState = { button:button, pointerId:event.pointerId, moved:false };
+        if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+    });
+    document.addEventListener("pointermove", function(event){
+      if(!dragState || event.pointerId !== dragState.pointerId) return;
+      var target = document.elementFromPoint(event.clientX,event.clientY);
+      var targetTab = target && target.closest(".tab-bar .tab-btn");
+      if(!targetTab || targetTab === dragState.button) return;
+      dragState.moved = true;
+      dragState.button.classList.add("tab-reordering");
+      var rect = targetTab.getBoundingClientRect();
+      var insertBefore = event.clientX < rect.left + rect.width / 2;
+      tabBar.insertBefore(dragState.button, insertBefore ? targetTab : targetTab.nextSibling);
+      event.preventDefault();
+    });
+    function finishTabReordering(event){
+      if(!dragState || event.pointerId !== dragState.pointerId) return;
+      var moved = dragState.moved;
+      dragState.button.classList.remove("tab-reordering");
+      dragState = null;
+      if(moved){
+        tabClickSuppressionUntil = Date.now() + 400;
+        state.tabOrder = Array.prototype.map.call(tabBar.querySelectorAll(".tab-btn"),function(button){
+          return button.id.replace(/^tab-btn-/,"");
+        });
+        saveState();
+      }
+    }
+    document.addEventListener("pointerup", finishTabReordering);
+    document.addEventListener("pointercancel", finishTabReordering);
+  }
+
+  var activeVisibilityTab = "objectives";
+  function ensureHiddenWindows(){
+    if(!state.hiddenWindows || typeof state.hiddenWindows !== "object" || Array.isArray(state.hiddenWindows)) state.hiddenWindows = {};
+    ["objectives","diary","board","clients","plants"].forEach(function(tab){
+      if(!Array.isArray(state.hiddenWindows[tab])) state.hiddenWindows[tab] = [];
+    });
+  }
+
+  function windowKeyForElement(node){
+    if(node.dataset.visibilityWindow) return "window:" + node.dataset.visibilityWindow;
+    if(node.classList.contains("board-list")) return "board-list:" + node.dataset.listId;
+    if(node.dataset.dashboardWidget) return "dashboard:" + node.dataset.dashboardWidget;
+    if(node.dataset.card) return "card:" + node.dataset.card;
+    return null;
+  }
+
+  function windowLabelForElement(node){
+    if(node.dataset.visibilityLabel) return node.dataset.visibilityLabel;
+    if(node.classList.contains("board-list")){
+      var titleInput = node.querySelector(".board-list-title");
+      return titleInput ? "Lista: " + (titleInput.value.trim() || "Sem título") : "Lista do quadro";
+    }
+    var heading = node.querySelector("h2, h3, .card-title");
+    if(heading) return heading.textContent.trim();
+    if(node.dataset.dashboardWidget) return "Painel: " + node.dataset.dashboardWidget;
+    return "Janela";
+  }
+
+  function getConfigurableWindows(tab){
+    var panel = document.getElementById("tab-" + tab);
+    if(!panel) return [];
+    var nodes = [];
+    Array.prototype.push.apply(nodes, panel.querySelectorAll(".card[data-card], [data-dashboard-widget], [data-visibility-window], .board-list"));
+    var seen = {};
+    return nodes.map(function(node){
+      return { node:node, key:windowKeyForElement(node), label:windowLabelForElement(node) };
+    }).filter(function(item){
+      if(!item.key || seen[item.key]) return false;
+      seen[item.key] = true;
+      return true;
+    });
+  }
+
+  function applyWindowVisibility(tab){
+    ensureHiddenWindows();
+    var hidden = state.hiddenWindows[tab] || [];
+    getConfigurableWindows(tab).forEach(function(item){
+      item.node.classList.toggle("window-hidden-by-settings", hidden.indexOf(item.key) !== -1);
+    });
+  }
+
+  function renderWindowVisibilityOptions(tab){
+    ensureHiddenWindows();
+    var hidden = state.hiddenWindows[tab] || [];
+    var windows = getConfigurableWindows(tab);
+    el["window-visibility-list"].innerHTML = "";
+    if(!windows.length){
+      var empty = document.createElement("p");
+      empty.className = "window-visibility-empty";
+      empty.textContent = "Não há janelas configuráveis nesta aba.";
+      el["window-visibility-list"].appendChild(empty);
+      return;
+    }
+    windows.forEach(function(item){
+      var label = document.createElement("label");
+      label.className = "window-visibility-option";
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = hidden.indexOf(item.key) === -1;
+      checkbox.addEventListener("change", function(){
+        var current = state.hiddenWindows[tab];
+        if(checkbox.checked) current = current.filter(function(key){ return key !== item.key; });
+        else if(current.indexOf(item.key) === -1) current.push(item.key);
+        state.hiddenWindows[tab] = current;
+        saveState();
+        applyWindowVisibility(tab);
+      });
+      var text = document.createElement("span");
+      text.textContent = item.label;
+      label.appendChild(checkbox);
+      label.appendChild(text);
+      el["window-visibility-list"].appendChild(label);
+    });
+  }
+
+  el["btn-window-visibility"].addEventListener("click", function(){
+    activeVisibilityTab = state.activeTab || "objectives";
+    var tabButton = document.getElementById("tab-btn-" + activeVisibilityTab);
+    el["window-visibility-title"].textContent = "Janelas de " + (tabButton ? tabButton.textContent.replace(/^\S+\s*/, "") : "esta aba");
+    renderWindowVisibilityOptions(activeVisibilityTab);
+    el["window-visibility-modal"].classList.add("show");
+    el["btn-window-visibility"].setAttribute("aria-expanded", "true");
+    el["btn-window-visibility-close"].focus();
+  });
+  function closeWindowVisibilityModal(){
+    el["window-visibility-modal"].classList.remove("show");
+    el["btn-window-visibility"].setAttribute("aria-expanded", "false");
+    el["btn-window-visibility"].focus();
+  }
+  el["btn-window-visibility-reset"].addEventListener("click", function(){
+    state.hiddenWindows[activeVisibilityTab] = [];
+    saveState();
+    applyWindowVisibility(activeVisibilityTab);
+    renderWindowVisibilityOptions(activeVisibilityTab);
+  });
+  el["btn-window-visibility-close"].addEventListener("click", closeWindowVisibilityModal);
+  el["window-visibility-modal"].addEventListener("click", function(event){
+    if(event.target === el["window-visibility-modal"]) closeWindowVisibilityModal();
+  });
+  document.addEventListener("keydown", function(event){
+    if(event.key === "Escape" && el["window-visibility-modal"].classList.contains("show")) closeWindowVisibilityModal();
+  });
 
   var editingPlantId = null;
   var plantPhotoData = null;
@@ -2120,15 +2511,30 @@
   }
 
   function renderPlantCalendar(){
+    applyPlantCalendarFilters();
     renderPlantCalendarSidebar();
     renderPlantCalendarGrid();
   }
 
   el["btn-plant-cal-prev"].addEventListener("click", function(){ plantCalendarCursor.setMonth(plantCalendarCursor.getMonth()-1); renderPlantCalendarGrid(); });
   el["btn-plant-cal-next"].addEventListener("click", function(){ plantCalendarCursor.setMonth(plantCalendarCursor.getMonth()+1); renderPlantCalendarGrid(); });
-  el["filter-cal-last"].addEventListener("change", renderPlantCalendarGrid);
-  el["filter-cal-next"].addEventListener("change", renderPlantCalendarGrid);
-  el["filter-cal-season"].addEventListener("change", renderPlantCalendarGrid);
+  function applyPlantCalendarFilters(){
+    el["filter-cal-last"].checked = state.plantCalendarFilters.last;
+    el["filter-cal-next"].checked = state.plantCalendarFilters.next;
+    el["filter-cal-season"].checked = state.plantCalendarFilters.season;
+  }
+  function savePlantCalendarFilters(){
+    state.plantCalendarFilters = {
+      last:el["filter-cal-last"].checked,
+      next:el["filter-cal-next"].checked,
+      season:el["filter-cal-season"].checked
+    };
+    saveState();
+    renderPlantCalendarGrid();
+  }
+  el["filter-cal-last"].addEventListener("change", savePlantCalendarFilters);
+  el["filter-cal-next"].addEventListener("change", savePlantCalendarFilters);
+  el["filter-cal-season"].addEventListener("change", savePlantCalendarFilters);
 
   function renderPlantsTab(){
     renderPlantsList();
@@ -2140,7 +2546,7 @@
 
   function applyDashboardLayout(){
     state.dashboardLayout = normalizeDashboardLayout(state.dashboardLayout);
-    var container = document.querySelector(".dashboard-extras");
+    var container = document.querySelector(".clients-dashboard-extras");
     if(!container) return;
     state.dashboardLayout.order.forEach(function(id){
       var widget = container.querySelector('[data-dashboard-widget="' + id + '"]');
@@ -2152,21 +2558,24 @@
   }
 
   function saveDashboardLayout(){
-    var container = document.querySelector(".dashboard-extras");
+    var container = document.querySelector(".clients-dashboard-extras");
     if(!container) return;
     state.dashboardLayout.order = Array.prototype.map.call(
-      container.querySelectorAll("[data-dashboard-widget]"),
+      Array.prototype.slice.call(container.querySelectorAll("[data-dashboard-widget]")).sort(function(a,b){
+        return (parseInt(a.style.order,10) || 0) - (parseInt(b.style.order,10) || 0);
+      }),
       function(widget){ return widget.dataset.dashboardWidget; }
     );
     saveState();
   }
 
   function setupDashboardWidgets(){
-    var container = document.querySelector(".dashboard-extras");
+    var container = document.querySelector(".clients-dashboard-extras");
     if(!container) return;
     state.dashboardLayout = normalizeDashboardLayout(state.dashboardLayout);
     container.querySelectorAll("[data-dashboard-widget]").forEach(function(widget){
       var id = widget.dataset.dashboardWidget;
+      widget.dataset.dashboardWidget = id;
       var controls = document.createElement("div");
       controls.className = "dashboard-widget-controls";
       var drag = document.createElement("button");
@@ -2174,41 +2583,17 @@
       drag.className = "dashboard-widget-drag";
       drag.textContent = "⠿";
       drag.title = "Arraste para mover este painel";
-      drag.setAttribute("aria-label", "Arrastar painel para mover");
+      drag.setAttribute("aria-label", "Arrastar " + windowLabelForElement(widget) + " para reorganizar");
       controls.appendChild(drag);
-      [
-        { action:"width-down", text:"−L", label:"Diminuir largura" },
-        { action:"width-up", text:"+L", label:"Aumentar largura" },
-        { action:"height-down", text:"−A", label:"Diminuir altura" },
-        { action:"height-up", text:"+A", label:"Aumentar altura" }
-      ].forEach(function(control){
-        var button = document.createElement("button");
-        button.type = "button";
-        button.dataset.resize = control.action;
-        button.textContent = control.text;
-        button.title = control.label + " do painel";
-        button.setAttribute("aria-label", control.label + " do painel");
-        controls.appendChild(button);
-      });
       var header = widget.querySelector(".card-head");
       if(header) header.appendChild(controls);
-      widget.dataset.dashboardWidget = id;
-    });
-
-    container.addEventListener("click", function(event){
-      var button = event.target.closest("[data-resize]");
-      if(!button) return;
-      var widget = button.closest("[data-dashboard-widget]");
-      var id = widget && widget.dataset.dashboardWidget;
-      if(!id) return;
-      var action = button.dataset.resize;
-      if(action === "width-down") state.dashboardLayout.widths[id] = Math.max(4, state.dashboardLayout.widths[id] - 1);
-      if(action === "width-up") state.dashboardLayout.widths[id] = Math.min(12, state.dashboardLayout.widths[id] + 1);
-      if(action === "height-down") state.dashboardLayout.heights[id] = Math.max(180, state.dashboardLayout.heights[id] - 40);
-      if(action === "height-up") state.dashboardLayout.heights[id] = Math.min(600, state.dashboardLayout.heights[id] + 40);
-      widget.style.setProperty("--dashboard-width", state.dashboardLayout.widths[id]);
-      widget.style.setProperty("--dashboard-height", state.dashboardLayout.heights[id] + "px");
-      saveState();
+      var resizeHandle = document.createElement("button");
+      resizeHandle.type = "button";
+      resizeHandle.className = "dashboard-widget-resize";
+      resizeHandle.textContent = "◢";
+      resizeHandle.title = "Arraste para ajustar o tamanho desta janela";
+      resizeHandle.setAttribute("aria-label", "Redimensionar " + windowLabelForElement(widget));
+      widget.appendChild(resizeHandle);
     });
 
     var dashboardPointer = null;
@@ -2262,6 +2647,57 @@
     }
     document.addEventListener("pointerup", finishDashboardPointer);
     document.addEventListener("pointercancel", finishDashboardPointer);
+
+    var dashboardResizePointer = null;
+    container.querySelectorAll(".dashboard-widget-resize").forEach(function(handle){
+      handle.addEventListener("pointerdown", function(event){
+        var widget = handle.closest("[data-dashboard-widget]");
+        if(!widget || event.button !== 0) return;
+        var rect = widget.getBoundingClientRect();
+        dashboardResizePointer = {
+          widget:widget,
+          pointerId:event.pointerId,
+          startX:event.clientX,
+          startY:event.clientY,
+          startWidth:rect.width,
+          startHeight:rect.height,
+          width:state.dashboardLayout.widths[widget.dataset.dashboardWidget],
+          resized:false
+        };
+        widget.classList.add("resizing");
+        if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+    });
+    document.addEventListener("pointermove", function(event){
+      if(!dashboardResizePointer || event.pointerId !== dashboardResizePointer.pointerId) return;
+      var resize = dashboardResizePointer;
+      resize.resized = true;
+      var deltaX = event.clientX - resize.startX;
+      var deltaY = event.clientY - resize.startY;
+      if(window.innerWidth > 700){
+        var styles = window.getComputedStyle(container);
+        var gap = parseFloat(styles.columnGap) || 0;
+        var trackWidth = (container.clientWidth - gap * 11) / 12;
+        var nextWidth = Math.max(3, Math.min(12, Math.round((resize.startWidth + deltaX + gap) / (trackWidth + gap))));
+        state.dashboardLayout.widths[resize.widget.dataset.dashboardWidget] = nextWidth;
+        resize.widget.style.setProperty("--dashboard-width", nextWidth);
+      }
+      var nextHeight = Math.max(180, Math.min(1000, Math.round((resize.startHeight + deltaY) / 20) * 20));
+      state.dashboardLayout.heights[resize.widget.dataset.dashboardWidget] = nextHeight;
+      resize.widget.style.setProperty("--dashboard-height", nextHeight + "px");
+      event.preventDefault();
+    });
+    function finishDashboardResize(event){
+      if(!dashboardResizePointer || event.pointerId !== dashboardResizePointer.pointerId) return;
+      var resize = dashboardResizePointer;
+      resize.widget.classList.remove("resizing");
+      dashboardResizePointer = null;
+      if(resize.resized) saveState();
+    }
+    document.addEventListener("pointerup", finishDashboardResize);
+    document.addEventListener("pointercancel", finishDashboardResize);
+
     applyDashboardLayout();
   }
 
@@ -2271,6 +2707,7 @@
   setTodoDueMode("none");
   initChart();
   setupDashboardWidgets();
+  setupTabReordering();
   renderAll();
   applySavedCardOrder();
   applySavedClientsCardOrder();
@@ -3440,6 +3877,7 @@
     state.todos.forEach(function(t){
       var row = document.createElement("div");
       row.className = "todo-item";
+      row.dataset.todoId = t.id;
       var dueHtml = t.dueAt
         ? '<span class="todo-countdown" data-due="' + t.dueAt + '">' + formatCountdown(t.dueAt) + '</span>'
         : "";
@@ -3486,6 +3924,7 @@
     saveState();
     renderTodos();
     renderUpcomingReminders();
+    renderTodayAgenda();
     el["input-todo"].value = "";
     el["input-todo-due"].value = "";
     el["input-todo-timer-minutes"].value = "";
@@ -3505,6 +3944,7 @@
     renderHistory();
     renderWeeklySummary();
     renderUpcomingReminders();
+    renderTodayAgenda();
     playSuccessSound();
   }
   function removeTodo(id){
@@ -3512,6 +3952,7 @@
     saveState();
     renderTodos();
     renderUpcomingReminders();
+    renderTodayAgenda();
   }
   el["btn-add-todo"].addEventListener("click", addTodo);
   el["input-todo"].addEventListener("keydown", function(e){ if(e.key === "Enter") addTodo(); });
@@ -3532,6 +3973,7 @@
     safeCall(renderBoard);
     safeCall(renderWeeklySummary);
     safeCall(renderUpcomingReminders);
+    safeCall(renderTodayAgenda);
     safeCall(renderObjectivesUpcomingBirthdays);
     safeCall(renderBackupReminder);
     safeCall(renderGlobalSearchResults);
@@ -3586,17 +4028,17 @@
     return date;
   }
 
-  function renderUpcomingReminders(){
+  function collectUpcomingReminders(includeAllOverdue){
     var reminders = [];
     var today = new Date();
     today.setHours(0,0,0,0);
-    var cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+    var cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (includeAllOverdue ? 0 : 7));
     function addReminder(title, type, date, onOpen, overdue, onComplete){
       if(!date) return;
       var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if(day > cutoff || (day < today && !overdue)) return;
       var overdueCutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
-      if(overdue && day < overdueCutoff) return;
+      if(overdue && day < overdueCutoff && !includeAllOverdue) return;
       reminders.push({
         title:title,
         type:type,
@@ -3613,11 +4055,9 @@
       if(!isFinite(date.getTime())) return;
       addReminder(todo.text, "Tarefa", date, function(){
         switchTab("objectives");
-        var row = Array.prototype.slice.call(document.querySelectorAll(".todo-item")).find(function(item){
-          return item.textContent.indexOf(todo.text) !== -1;
-        });
+        var row = Array.prototype.slice.call(document.querySelectorAll(".todo-item")).find(function(item){ return item.dataset.todoId === todo.id; });
         if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
-      }, date.getTime() < Date.now());
+      }, date.getTime() < Date.now(), function(){ completeTodo(todo.id); });
     });
 
     state.board.lists.forEach(function(list){
@@ -3629,7 +4069,15 @@
             return item.dataset.cardId === card.id;
           });
           if(cardEl) cardEl.scrollIntoView({ behavior:"smooth", block:"center" });
-        }, true);
+        }, true, function(){
+          card.done = true;
+          card.completedAt = todayStr();
+          saveState();
+          renderBoard();
+          renderHistoryView();
+          renderUpcomingReminders();
+          renderTodayAgenda();
+        });
       });
     });
 
@@ -3639,6 +4087,12 @@
           switchTab("clients");
           showClientCardModal(client);
         }, true, function(){ setClientDeliveryCompleted(client, true); });
+      }
+      if(client.postSaleDate && client.postSaleCompleted !== true){
+        addReminder("Pós-venda · " + client.name, "Pós-venda", parseLocalIsoDate(client.postSaleDate), function(){
+          switchTab("clients");
+          showClientCardModal(client);
+        }, true, function(){ setClientPostSaleCompleted(client, true); });
       }
       if(client.birthday){
         var birthday = nextBirthdayDate(birthdayMMDD(client));
@@ -3658,43 +4112,107 @@
     });
 
     reminders.sort(function(a,b){ return a.date - b.date; });
+    return reminders;
+  }
+
+  function renderReminderItem(reminder, parent){
+    var item = document.createElement("div");
+    item.className = "dashboard-extra-item";
+    var title = document.createElement("strong");
+    title.textContent = reminder.title;
+    var date = document.createElement("span");
+    var dateText = reminder.date
+      ? pad2(reminder.date.getDate()) + "/" + pad2(reminder.date.getMonth()+1)
+      : "Sem prazo";
+    date.textContent = reminder.type + " · " + dateText + (reminder.overdue ? " · atrasado" : "");
+    if(reminder.overdue) date.style.color = "var(--red)";
+    var content = document.createElement("div");
+    content.className = "dashboard-reminder-content";
+    var openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "dashboard-reminder-open";
+    openButton.appendChild(title);
+    openButton.appendChild(date);
+    openButton.addEventListener("click", reminder.onOpen);
+    content.appendChild(openButton);
+    if(reminder.onComplete){
+      var completeButton = document.createElement("button");
+      completeButton.type = "button";
+      completeButton.className = "dashboard-reminder-done" + (reminder.type === "Pós-venda" ? " dashboard-reminder-followup-done" : "");
+      completeButton.textContent = reminder.type === "Pós-venda" ? "✓ Feito"
+        : reminder.type === "Tarefa" ? "✓ Concluída"
+        : reminder.type === "Quadro" ? "✓ Concluído" : "✓ Entregue";
+      completeButton.setAttribute("aria-label", "Concluir: " + reminder.title);
+      completeButton.addEventListener("click", reminder.onComplete);
+      content.appendChild(completeButton);
+    }
+    item.appendChild(content);
+    parent.appendChild(item);
+  }
+
+  function renderUpcomingReminders(){
+    var reminders = collectUpcomingReminders(false);
     el["upcoming-reminders"].innerHTML = "";
     if(!reminders.length){
-      el["upcoming-reminders"].innerHTML = '<p class="dashboard-extra-empty">Nenhum prazo, entrega ou evento nos próximos 7 dias.</p>';
+      el["upcoming-reminders"].innerHTML = '<p class="dashboard-extra-empty">Nenhum prazo, entrega, pós-venda ou evento nos próximos 7 dias.</p>';
       return;
     }
     reminders.slice(0,12).forEach(function(reminder){
-      var item = document.createElement("div");
-      item.className = "dashboard-extra-item";
-      var title = document.createElement("strong");
-      title.textContent = reminder.title;
-      var date = document.createElement("span");
-      var dateText = pad2(reminder.date.getDate()) + "/" + pad2(reminder.date.getMonth()+1);
-      date.textContent = reminder.type + " · " + dateText + (reminder.overdue ? " · atrasado" : "");
-      if(reminder.overdue) date.style.color = "var(--red)";
-      var content = document.createElement("div");
-      content.className = "dashboard-reminder-content";
-      var openButton = document.createElement("button");
-      openButton.type = "button";
-      openButton.className = "dashboard-reminder-open";
-      openButton.appendChild(title);
-      openButton.appendChild(date);
-      openButton.addEventListener("click", reminder.onOpen);
-      content.appendChild(openButton);
-      if(reminder.onComplete){
-        var completeButton = document.createElement("button");
-        completeButton.type = "button";
-        completeButton.className = "dashboard-reminder-done";
-        completeButton.textContent = "✓ Entregue";
-        completeButton.setAttribute("aria-label", "Confirmar entrega de " + reminder.title.replace(/^Entrega · /, ""));
-        completeButton.addEventListener("click", function(){
-          reminder.onComplete();
-        });
-        content.appendChild(completeButton);
-      }
-      item.appendChild(content);
-      el["upcoming-reminders"].appendChild(item);
+      renderReminderItem(reminder, el["upcoming-reminders"]);
     });
+  }
+
+  function renderTodayAgenda(){
+    var container = el["today-agenda-content"];
+    if(!container) return;
+    container.innerHTML = "";
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var reminders = collectUpcomingReminders(true).filter(function(item){ return item.date <= today; });
+    var overdue = reminders.filter(function(item){ return item.overdue; });
+    var dueToday = reminders.filter(function(item){ return !item.overdue; });
+    var unscheduled = state.todos.filter(function(todo){ return !todo.dueAt; });
+    var hasItems = overdue.length || dueToday.length || unscheduled.length;
+    if(!hasItems){
+      var empty = document.createElement("p");
+      empty.className = "today-agenda-empty";
+      empty.textContent = "Tudo em dia. Não há tarefas ou compromissos pendentes para hoje.";
+      container.appendChild(empty);
+      return;
+    }
+    function addSection(title, items, className, emptyText){
+      var section = document.createElement("section");
+      section.className = "today-agenda-section " + className;
+      var heading = document.createElement("h3");
+      heading.textContent = title + " (" + items.length + ")";
+      section.appendChild(heading);
+      if(!items.length){
+        var empty = document.createElement("p");
+        empty.className = "today-agenda-empty";
+        empty.textContent = emptyText;
+        section.appendChild(empty);
+      } else {
+        items.forEach(function(item){ renderReminderItem(item, section); });
+      }
+      container.appendChild(section);
+    }
+    addSection("Atrasados", overdue, "overdue", "Nenhuma pendência atrasada.");
+    addSection("Para hoje", dueToday, "today", "Nenhum compromisso com data para hoje.");
+    var unscheduledItems = unscheduled.map(function(todo){
+      return {
+        title:todo.text,
+        type:"Tarefa",
+        date:null,
+        overdue:false,
+        onOpen:function(){
+          switchTab("objectives");
+          var row = Array.prototype.slice.call(document.querySelectorAll(".todo-item")).find(function(item){ return item.dataset.todoId === todo.id; });
+          if(row) row.scrollIntoView({ behavior:"smooth", block:"center" });
+        },
+        onComplete:function(){ completeTodo(todo.id); }
+      };
+    });
+    addSection("Tarefas sem prazo", unscheduledItems, "unscheduled", "Nenhuma tarefa sem prazo.");
   }
 
   function renderObjectivesUpcomingBirthdays(){
@@ -3883,18 +4401,13 @@
     }
     var days = lastBackup && isFinite(lastBackup.getTime())
       ? Math.floor((Date.now() - lastBackup.getTime()) / 86400000) : null;
-    if(days !== null && days < 7){
-      reminder.style.display = "none";
-      reminder.textContent = "";
-      return;
-    }
     reminder.style.display = "block";
     reminder.textContent = days === null
-      ? "Ainda não há um backup registrado neste navegador. "
-      : "Seu último backup foi há " + days + " dias. ";
+      ? "Ainda não há um backup exportado registrado neste navegador. "
+      : "Último backup exportado: " + lastBackup.toLocaleString("pt-BR") + (days >= 7 ? " · já faz " + days + " dias." : ".");
     var button = document.createElement("button");
     button.type = "button";
-    button.textContent = "Fazer backup agora";
+    button.textContent = days === null || days >= 7 ? "Fazer backup agora" : "Exportar backup atualizado";
     button.addEventListener("click", function(){ el["btn-export"].click(); });
     reminder.appendChild(button);
   }
@@ -3902,6 +4415,7 @@
   setInterval(function(){
     renderWeeklySummary();
     renderUpcomingReminders();
+    renderTodayAgenda();
     renderObjectivesUpcomingBirthdays();
     renderBackupReminder();
   }, 60000);
@@ -4027,6 +4541,8 @@
     try {
       var jsonText = JSON.stringify(state, null, 2);
       downloadBackup(jsonText);
+      el["backup-preview"].style.display = "none";
+      el["backup-preview"].textContent = "";
       el["backup-textarea"].value = jsonText;
       el["backup-modal-title"].textContent = "💾 Copiar Backup";
       el["backup-modal-desc"].textContent = "O download do arquivo de backup foi iniciado. Você também pode copiar o código para transferir os dados.";
@@ -4044,7 +4560,9 @@
   el["btn-import"].addEventListener("click", function(){
     el["backup-textarea"].value = "";
     el["backup-modal-title"].textContent = "📥 Restaurar Backup";
-    el["backup-modal-desc"].textContent = "Escolha o arquivo JSON que você baixou ou cole o código do backup e clique em 'Restaurar Dados'.";
+    el["backup-modal-desc"].textContent = "Escolha um arquivo JSON ou cole o código do backup. Confira o resumo antes de restaurar.";
+    el["backup-preview"].style.display = "none";
+    el["backup-preview"].textContent = "";
     el["btn-backup-download"].style.display = "none";
     el["btn-backup-copy"].style.display = "none";
     el["btn-backup-select-file"].style.display = "block";
@@ -4052,6 +4570,57 @@
     el["backup-file-input"].value = "";
     el["backup-modal"].classList.add("show");
   });
+
+  function backupSummary(parsed){
+    if(!parsed || typeof parsed !== "object" || !parsed.pillars || typeof parsed.pillars !== "object"
+      || !Array.isArray(parsed.tasks) || !Array.isArray(parsed.history)){
+      return null;
+    }
+    var summary = {
+      tasks:parsed.tasks.length,
+      todos:Array.isArray(parsed.todos) ? parsed.todos.length : 0,
+      clients:Array.isArray(parsed.clients) ? parsed.clients.length : 0,
+      plants:Array.isArray(parsed.plants) ? parsed.plants.length : 0,
+      diaryEntries:Array.isArray(parsed.diaryEntries) ? parsed.diaryEntries.length : 0,
+      boardCards:0
+    };
+    if(parsed.board && Array.isArray(parsed.board.lists)){
+      summary.boardCards = parsed.board.lists.reduce(function(total,list){
+        return total + (Array.isArray(list.cards) ? list.cards.length : 0);
+      }, 0);
+    }
+    return summary;
+  }
+
+  function updateBackupPreview(){
+    var preview = el["backup-preview"];
+    var rawText = el["backup-textarea"].value.trim();
+    if(!rawText){
+      preview.style.display = "none";
+      preview.textContent = "";
+      return;
+    }
+    var parsed;
+    try{ parsed = JSON.parse(rawText); }
+    catch(error){
+      preview.textContent = "O conteúdo ainda não é um JSON válido.";
+      preview.style.display = "block";
+      return;
+    }
+    var summary = backupSummary(parsed);
+    if(!summary){
+      preview.textContent = "Este arquivo não parece ser um backup válido do app.";
+      preview.style.display = "block";
+      return;
+    }
+    preview.textContent = "Prévia do backup: "
+      + summary.tasks + " ações · " + summary.todos + " tarefas · "
+      + summary.clients + " clientes · " + summary.plants + " plantas · "
+      + summary.diaryEntries + " entradas no diário · " + summary.boardCards + " cards no quadro."
+      + (parsed.exportedAt ? "\nCriado em: " + new Date(parsed.exportedAt).toLocaleString("pt-BR") : "");
+    preview.style.display = "block";
+  }
+  el["backup-textarea"].addEventListener("input", updateBackupPreview);
 
   el["btn-backup-download"].addEventListener("click", function(){
     try {
@@ -4076,6 +4645,7 @@
       }
       el["backup-textarea"].value = reader.result;
       el["backup-modal-desc"].textContent = 'Arquivo "' + file.name + '" carregado. Clique em "Restaurar Dados" para aplicar o backup.';
+      updateBackupPreview();
     };
     reader.onerror = function(){
       console.error("Não foi possível ler o arquivo de backup:", reader.error);
@@ -4117,8 +4687,29 @@
       alert("Esse código não contém a estrutura correta do aplicativo.");
       return;
     }
-    askConfirm("Isso vai substituir os dados atuais pelos dados colados. Deseja continuar?", function(){
+    var summary = backupSummary(parsed);
+    if(!summary){
+      alert("Esse backup está incompleto ou tem um formato incompatível.");
+      return;
+    }
+    var summaryText = summary.tasks + " ações, " + summary.todos + " tarefas, "
+      + summary.clients + " clientes, " + summary.plants + " plantas, "
+      + summary.diaryEntries + " entradas no diário e " + summary.boardCards + " cards.";
+    askConfirm("O backup contém " + summaryText + " A restauração substitui os dados atuais. Antes disso, será baixada uma cópia do estado atual deste aparelho. Deseja continuar?", function(){
+      try{
+        downloadBackup(JSON.stringify(state, null, 2));
+      }catch(backupError){
+        console.error("Não foi possível baixar uma cópia de segurança antes da restauração:", backupError);
+        alert("A restauração foi cancelada porque não foi possível criar a cópia de segurança dos dados atuais.");
+        return;
+      }
       state = parsed;
+      state.tabOrder = normalizeTabOrder(state.tabOrder);
+      state.plantCalendarFilters = normalizePlantCalendarFilters(state.plantCalendarFilters);
+      if(!state.uiCollapsed || typeof state.uiCollapsed !== "object") state.uiCollapsed = {};
+      if(!state.windowLayouts || typeof state.windowLayouts !== "object") state.windowLayouts = {};
+      if(!state.windowOrder || typeof state.windowOrder !== "object") state.windowOrder = {};
+      if(!state.hiddenWindows || typeof state.hiddenWindows !== "object") state.hiddenWindows = {};
       lastActions = {};
       saveState();
       renderAll();
@@ -4129,6 +4720,7 @@
       applyUiPrefs();
       renderBoard();
       setBoardView(state.boardView, true);
+      applyTabOrder();
       switchTab(state.activeTab, true);
       el["backup-modal"].classList.remove("show");
       alert("Dados restaurados com sucesso!");
@@ -4143,28 +4735,297 @@
   });
 
   function refreshCollapsedCards(){
-    document.querySelectorAll(".card[data-card]").forEach(function(card){
-      var id = card.dataset.card;
-      var btn = card.querySelector(".btn-minimize");
-      if(!btn) return;
-      if(state.uiCollapsed[id]){ card.classList.add("collapsed"); btn.textContent = "+"; }
-      else { card.classList.remove("collapsed"); btn.textContent = "–"; }
+    document.querySelectorAll("[data-window-id]").forEach(function(node){
+      var key = windowCollapseKey(node);
+      var btn = node.querySelector(".btn-minimize");
+      if(!key || !btn) return;
+      var collapsed = !!state.uiCollapsed[key];
+      node.classList.toggle("collapsed",collapsed);
+      updateWindowMinimizeButton(node,btn,collapsed);
     });
   }
   function initCollapsibleCards(){
+    initResizableWindows(document);
     refreshCollapsedCards();
-    document.querySelectorAll(".card[data-card]").forEach(function(card){
-      var id = card.dataset.card;
-      var btn = card.querySelector(".btn-minimize");
-      if(!btn) return;
-      btn.addEventListener("click", function(){
-        var collapsed = card.classList.toggle("collapsed");
-        btn.textContent = collapsed ? "+" : "–";
-        state.uiCollapsed[id] = collapsed;
-        saveState();
+  }
+
+  function windowCollapseKey(node){
+    if(node.classList.contains("board-list")) return "board-list:" + node.dataset.listId;
+    if(node.dataset.dashboardWidget) return "dashboard:" + node.dataset.dashboardWidget;
+    return node.dataset.card || null;
+  }
+
+  function windowGroupFor(node){
+    if(node.dataset.dashboardWidget) return "dashboard";
+    if(node.classList.contains("board-list")) return "board-lists";
+    var panel = node.closest(".tab-panel");
+    if(!panel) return null;
+    if(panel.id === "tab-board") return "board-history";
+    return panel.id.replace("tab-","");
+  }
+
+  function windowIdFor(node){
+    if(node.classList.contains("board-list")) return "board-list:" + node.dataset.listId;
+    if(node.dataset.dashboardWidget) return "dashboard:" + node.dataset.dashboardWidget;
+    return "card:" + node.dataset.card;
+  }
+
+  function windowLabelFor(node){
+    if(node.dataset.visibilityLabel) return node.dataset.visibilityLabel;
+    if(node.classList.contains("board-list")){
+      var titleInput = node.querySelector(".board-list-title");
+      if(titleInput && titleInput.value.trim()) return titleInput.value.trim();
+    }
+    var heading = node.querySelector(".card-head h2");
+    return heading ? heading.textContent.trim() : "Janela";
+  }
+
+  function updateWindowMinimizeButton(node,button,collapsed){
+    var icon = button.querySelector(".minimized-window-icon");
+    if(!icon){
+      button.textContent = "";
+      icon = document.createElement("span");
+      icon.className = "minimized-window-icon";
+      button.appendChild(icon);
+      var label = document.createElement("span");
+      label.className = "minimized-window-label";
+      button.appendChild(label);
+    }
+    icon.textContent = collapsed ? "+" : "–";
+    var labelNode = button.querySelector(".minimized-window-label");
+    labelNode.textContent = windowLabelFor(node);
+    button.setAttribute("aria-label",collapsed ? "Restaurar janela: " + labelNode.textContent : "Minimizar janela");
+    button.title = collapsed ? "Restaurar " + labelNode.textContent : "Minimizar janela";
+  }
+
+  function windowGroupNodes(group){
+    if(group === "dashboard") return Array.prototype.slice.call(document.querySelectorAll(".clients-dashboard-extras [data-dashboard-widget]"));
+    if(group === "board-lists") return Array.prototype.slice.call(document.querySelectorAll("#board-lists .board-list"));
+    if(group === "board-history") return Array.prototype.slice.call(document.querySelectorAll("#history-view .card[data-window-id]"));
+    var panel = document.getElementById("tab-" + group);
+    if(!panel) return [];
+    return Array.prototype.slice.call(panel.querySelectorAll(".card[data-window-id]"));
+  }
+
+  function groupOrderFromDom(group){
+    return windowGroupNodes(group).sort(function(a,b){
+      var aOrder = parseInt(a.style.order,10);
+      var bOrder = parseInt(b.style.order,10);
+      var aSet = isFinite(aOrder), bSet = isFinite(bOrder);
+      if(aSet && bSet && aOrder !== bOrder) return aOrder - bOrder;
+      if(aSet !== bSet) return aSet ? -1 : 1;
+      return 0;
+    }).map(windowIdFor);
+  }
+
+  function applyWindowOrder(group){
+    var nodes = windowGroupNodes(group);
+    if(!nodes.length) return;
+    var available = nodes.map(windowIdFor);
+    var stored = state.windowOrder && Array.isArray(state.windowOrder[group]) ? state.windowOrder[group] : [];
+    var order = stored.filter(function(id,index,items){ return available.indexOf(id) !== -1 && items.indexOf(id) === index; });
+    available.forEach(function(id){ if(order.indexOf(id) === -1) order.push(id); });
+    state.windowOrder[group] = order;
+    order.forEach(function(id,index){
+      var node = nodes.find(function(item){ return windowIdFor(item) === id; });
+      if(node) node.style.order = String(index);
+    });
+  }
+
+  function prepareWindowNode(node){
+    if(node.dataset.windowControlsReady === "true") return;
+    var isBoardList = node.classList.contains("board-list");
+    var isDashboard = !!node.dataset.dashboardWidget;
+    if(isBoardList){
+      node.dataset.windowId = "board-list:" + node.dataset.listId;
+      node.dataset.windowGroup = "board-lists";
+    } else {
+      node.dataset.windowId = windowIdFor(node);
+      node.dataset.windowGroup = windowGroupFor(node);
+    }
+    var collapseKey = windowCollapseKey(node);
+    var header = isBoardList ? node.querySelector(".board-list-head") : node.querySelector(".card-head");
+    if(!header){ node.dataset.windowControlsReady = "true"; return; }
+
+    if(isDashboard){
+      var dashboardDrag = node.querySelector(".dashboard-widget-drag");
+      if(dashboardDrag) dashboardDrag.classList.add("window-drag-handle");
+    } else {
+      var drag = isBoardList ? node.querySelector(".board-list-drag") : node.querySelector(".drag-handle");
+      if(!drag){
+        drag = document.createElement("span");
+        drag.className = "window-drag-handle" + (isBoardList ? " board-list-drag" : " drag-handle");
+        drag.textContent = "⠿";
+        header.insertBefore(drag,header.firstChild);
+      } else {
+        drag.classList.add("window-drag-handle");
+      }
+      drag.draggable = false;
+      drag.removeAttribute("draggable");
+      drag.setAttribute("aria-label","Arrastar para reorganizar");
+      drag.title = "Arraste para mudar a posição da janela";
+    }
+
+    var minimize = node.querySelector(".btn-minimize");
+    if(!minimize){
+      minimize = document.createElement("button");
+      minimize.type = "button";
+      minimize.className = "btn-minimize";
+      var actions = header.querySelector(".card-head-actions, .dashboard-widget-controls");
+      (actions || header).appendChild(minimize);
+    }
+    minimize.addEventListener("click",function(event){
+      event.stopPropagation();
+      var collapsed = node.classList.toggle("collapsed");
+      updateWindowMinimizeButton(node,minimize,collapsed);
+      state.uiCollapsed[collapseKey] = collapsed;
+      saveState();
+    });
+
+    if(!isDashboard){
+      var defaultColumns = isBoardList ? 3
+        : node.dataset.windowDefaultColumns ? Number(node.dataset.windowDefaultColumns)
+        : node.dataset.card === "diary-folders" ? 3
+        : node.dataset.card === "diary-notes" ? 9
+        : 6;
+      var saved = state.windowLayouts[node.dataset.windowId];
+      if(saved && isFinite(Number(saved.columns))) node.style.setProperty("--window-columns",Math.max(1,Math.min(12,Math.round(Number(saved.columns)))));
+      else node.style.setProperty("--window-columns",defaultColumns);
+      if(isBoardList && saved && isFinite(Number(saved.width))) node.style.setProperty("--window-width",Math.max(220,Math.min(900,Math.round(Number(saved.width)))) + "px");
+      if(saved && isFinite(Number(saved.height))) node.style.setProperty("--window-height",Math.max(isBoardList ? 220 : 160,Math.min(1200,Math.round(Number(saved.height)))) + "px");
+
+      if(!node.querySelector(":scope > .window-resize-handle")){
+        var resize = document.createElement("button");
+        resize.type = "button";
+        resize.className = "window-resize-handle";
+        resize.textContent = "◢";
+        resize.title = "Arraste para redimensionar esta janela";
+        resize.setAttribute("aria-label","Redimensionar janela");
+        node.appendChild(resize);
+      }
+    }
+    node.dataset.windowControlsReady = "true";
+    node.classList.toggle("collapsed",!!state.uiCollapsed[collapseKey]);
+    updateWindowMinimizeButton(node,minimize,!!state.uiCollapsed[collapseKey]);
+  }
+
+  function initResizableWindows(root){
+    if(!root) return;
+    root.querySelectorAll(".card[data-card],.dashboard-widget,.board-list").forEach(prepareWindowNode);
+    refreshCollapsedCards();
+    ["objectives","diary","board","clients","plants","board-lists","board-history"].forEach(applyWindowOrder);
+    root.querySelectorAll(".window-drag-handle").forEach(function(handle){
+      if(handle.dataset.windowDragReady === "true") return;
+      handle.dataset.windowDragReady = "true";
+      handle.addEventListener("pointerdown",function(event){
+        if(event.button !== 0) return;
+        var node = handle.closest("[data-window-id]");
+        if(node && node.classList.contains("dashboard-widget")) return;
+        var group = node && node.dataset.windowGroup;
+        if(!node || !group) return;
+        windowPointerDrag = { node:node, group:group, pointerId:event.pointerId, moved:false };
+        node.classList.add("window-layout-dragging");
+        if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+    });
+    root.querySelectorAll(".window-resize-handle").forEach(function(handle){
+      if(handle.dataset.windowResizeReady === "true") return;
+      handle.dataset.windowResizeReady = "true";
+      handle.addEventListener("pointerdown",function(event){
+        if(event.button !== 0) return;
+        var node = handle.closest("[data-window-id]");
+        if(!node) return;
+        var rect = node.getBoundingClientRect();
+        windowPointerResize = { node:node, pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, width:rect.width, height:rect.height, resized:false };
+        node.classList.add("window-layout-resizing");
+        if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+        event.preventDefault();
       });
     });
   }
+
+  var windowPointerDrag = null;
+  var windowPointerResize = null;
+  document.addEventListener("pointermove",function(event){
+    if(windowPointerDrag && event.pointerId === windowPointerDrag.pointerId){
+      var drag = windowPointerDrag;
+      var candidates = windowGroupNodes(drag.group).filter(function(node){ return node !== drag.node && node.getClientRects().length; });
+      if(candidates.length){
+        var nearest = null, nearestDistance = Infinity;
+        candidates.forEach(function(candidate){
+          var rect = candidate.getBoundingClientRect();
+          var dx = (event.clientX - (rect.left + rect.width/2)) / Math.max(rect.width,1);
+          var dy = (event.clientY - (rect.top + rect.height/2)) / Math.max(rect.height,1);
+          var distance = dx*dx + dy*dy;
+          if(distance < nearestDistance){ nearest = candidate; nearestDistance = distance; }
+        });
+        if(nearest){
+          var rect = nearest.getBoundingClientRect();
+          var before = Math.abs((event.clientX - (rect.left+rect.width/2))/Math.max(rect.width,1))
+            > Math.abs((event.clientY - (rect.top+rect.height/2))/Math.max(rect.height,1))
+            ? event.clientX < rect.left+rect.width/2
+            : event.clientY < rect.top+rect.height/2;
+          var order = groupOrderFromDom(drag.group).filter(function(id){ return id !== windowIdFor(drag.node); });
+          var targetIndex = order.indexOf(windowIdFor(nearest));
+          order.splice(targetIndex + (before ? 0 : 1),0,windowIdFor(drag.node));
+          order.forEach(function(id,index){
+            var item = windowGroupNodes(drag.group).find(function(candidate){ return windowIdFor(candidate) === id; });
+            if(item) item.style.order = String(index);
+          });
+          drag.moved = true;
+          event.preventDefault();
+        }
+      }
+    }
+    if(windowPointerResize && event.pointerId === windowPointerResize.pointerId){
+      var resize = windowPointerResize;
+      var root = resize.node.classList.contains("board-list") ? document.getElementById("board-lists")
+        : resize.node.closest(".dashboard-extras") || resize.node.closest("#tab-clients") || resize.node.closest(".grid-main")
+        || resize.node.closest(".plants-layout") || resize.node.closest("#tab-diary") || resize.node.closest(".history-layout");
+      if(!root) return;
+      var minHeight = resize.node.classList.contains("board-list") ? 220 : 160;
+      var nextHeight = Math.max(minHeight,Math.min(1200,Math.round((resize.height + event.clientY-resize.startY)/20)*20));
+      if(resize.node.classList.contains("board-list")){
+        var nextWidth = Math.max(220,Math.min(900,Math.round(resize.width + event.clientX-resize.startX)));
+        resize.node.style.setProperty("--window-width",nextWidth+"px");
+        resize.current = { width:nextWidth, height:nextHeight };
+      } else {
+        var styles = window.getComputedStyle(root);
+        var gap = parseFloat(styles.columnGap) || 0;
+        var columns = 12;
+        var trackWidth = (root.clientWidth-gap*(columns-1))/columns;
+        var nextColumns = Math.max(1,Math.min(12,Math.round((resize.width + event.clientX-resize.startX + gap)/(trackWidth+gap))));
+        resize.node.style.setProperty("--window-columns",nextColumns);
+        resize.current = { columns:nextColumns, height:nextHeight };
+      }
+      resize.node.style.setProperty("--window-height",nextHeight+"px");
+      resize.resized = true;
+      event.preventDefault();
+    }
+  });
+  function finishWindowPointer(event){
+    if(windowPointerDrag && event.pointerId === windowPointerDrag.pointerId){
+      var drag = windowPointerDrag;
+      drag.node.classList.remove("window-layout-dragging");
+      windowPointerDrag = null;
+      if(drag.moved){
+        state.windowOrder[drag.group] = groupOrderFromDom(drag.group);
+        saveState();
+      }
+    }
+    if(windowPointerResize && event.pointerId === windowPointerResize.pointerId){
+      var resize = windowPointerResize;
+      resize.node.classList.remove("window-layout-resizing");
+      windowPointerResize = null;
+      if(resize.resized){
+        state.windowLayouts[resize.node.dataset.windowId] = resize.current;
+        saveState();
+      }
+    }
+  }
+  document.addEventListener("pointerup",finishWindowPointer);
+  document.addEventListener("pointercancel",finishWindowPointer);
 
   function getDragAfterElement(container, y){
     var els = Array.prototype.slice.call(container.querySelectorAll(".card[data-card]:not(.dragging)"));
@@ -4234,31 +5095,7 @@
   }
 
   function setupDragAndDrop(){
-    var containers = [el["col-left"], el["col-right"], el["clients-col-left"], el["clients-col-right"], el["plants-col-left"], el["plants-col-right"]];
-    document.querySelectorAll(".card[data-card]").forEach(function(card){
-      var handle = card.querySelector(".drag-handle");
-      if(!handle) return;
-      handle.addEventListener("dragstart", function(e){
-        card.classList.add("dragging");
-        try{ e.dataTransfer.setData("text/plain", card.dataset.card); }catch(err){}
-      });
-      handle.addEventListener("dragend", function(){
-        card.classList.remove("dragging");
-        persistCardOrder();
-        persistClientsCardOrder();
-        persistPlantsCardOrder();
-      });
-    });
-    containers.forEach(function(container){
-      container.addEventListener("dragover", function(e){
-        e.preventDefault();
-        var dragging = document.querySelector(".card.dragging");
-        if(!dragging) return;
-        var afterElement = getDragAfterElement(container, e.clientY);
-        if(afterElement == null) container.appendChild(dragging);
-        else container.insertBefore(dragging, afterElement);
-      });
-    });
+    initResizableWindows(document);
   }
 
   function applyUiPrefs(){
@@ -4650,7 +5487,9 @@
     container.appendChild(addListBtn);
 
     setupBoardListDragOver();
+    initResizableWindows(container);
     renderUpcomingReminders();
+    applyWindowVisibility("board");
   }
 
   document.addEventListener("click", function(e){
@@ -4837,8 +5676,10 @@
 
   var editingClientId = null;
   var clientPhotoData = null;
+  var defaultClientPostSaleDate = dateStrDaysAgo(-7);
   var categoryModalMode = "create";
   var categoryToEdit = null;
+  el["client-post-sale-date"].value = defaultClientPostSaleDate;
 
   var dropzone = el["client-photo-dropzone"];
   if(dropzone){
@@ -5217,6 +6058,8 @@
     el["client-cpf"].value = "";
     el["client-birthday"].value = "";
     el["client-delivery-date"].value = "";
+    defaultClientPostSaleDate = dateStrDaysAgo(-7);
+    el["client-post-sale-date"].value = defaultClientPostSaleDate;
     el["client-phone"].value = "";
     el["client-purchase"].value = "";
     el["client-wants-to-buy"].value = "";
@@ -5248,6 +6091,9 @@
   el["btn-client-delivery-calendar"].addEventListener("click", function(){
     openClientDatePicker(el["client-delivery-date"]);
   });
+  el["btn-client-post-sale-calendar"].addEventListener("click", function(){
+    openClientDatePicker(el["client-post-sale-date"]);
+  });
 
   function setClientDeliveryCompleted(client, completed){
     if(!client || !client.deliveryDate) return;
@@ -5255,9 +6101,19 @@
     client.deliveryCompletedAt = completed ? todayStr() : null;
     saveState();
     renderUpcomingReminders();
+    renderTodayAgenda();
     renderClientsList();
     renderClientReport();
     renderClientCalendar();
+  }
+
+  function setClientPostSaleCompleted(client, completed){
+    if(!client || !client.postSaleDate) return;
+    client.postSaleCompleted = completed;
+    client.postSaleCompletedAt = completed ? todayStr() : null;
+    saveState();
+    renderUpcomingReminders();
+    renderTodayAgenda();
   }
 
   function startEditClient(client){
@@ -5269,6 +6125,7 @@
     el["client-cpf"].value = client.cpf || "";
     el["client-birthday"].value = client.birthday || "";
     el["client-delivery-date"].value = client.deliveryDate || "";
+    el["client-post-sale-date"].value = client.postSaleDate || "";
     el["client-phone"].value = client.phone || "";
     el["client-purchase"].value = client.purchase || "";
     el["client-wants-to-buy"].value = client.wantsToBuy || "";
@@ -5306,11 +6163,16 @@
       }
     }
     var rating = el["client-rating-select"].value || "bom";
+    var postSaleDate = el["client-post-sale-date"].value || null;
+    if(!editingClientId && postSaleDate === defaultClientPostSaleDate){
+      postSaleDate = dateStrDaysAgo(-7);
+    }
     var data = {
       name: name,
       cpf: cpf,
       birthday: el["client-birthday"].value || null,
       deliveryDate: el["client-delivery-date"].value || null,
+      postSaleDate: postSaleDate,
       deliveryCompleted: false,
       phone: el["client-phone"].value.trim(),
       purchase: el["client-purchase"].value.trim(),
@@ -5325,6 +6187,12 @@
         var deliveryDateChanged = existing.deliveryDate !== data.deliveryDate;
         existing.name = data.name; existing.cpf = data.cpf; existing.birthday = data.birthday;
         existing.deliveryDate = data.deliveryDate; existing.wantsToBuy = data.wantsToBuy;
+        var postSaleDateChanged = existing.postSaleDate !== data.postSaleDate;
+        existing.postSaleDate = data.postSaleDate;
+        if(postSaleDateChanged){
+          existing.postSaleCompleted = false;
+          existing.postSaleCompletedAt = null;
+        }
         if(deliveryDateChanged){
           existing.deliveryCompleted = false;
           existing.deliveryCompletedAt = null;
@@ -5335,6 +6203,8 @@
     } else {
       data.id = uid();
       data.createdAt = todayStr();
+      data.postSaleCompleted = false;
+      data.postSaleCompletedAt = null;
       state.clients.push(data);
     }
     saveState();
