@@ -156,11 +156,36 @@
   .grid-main,.clients-layout,.plants-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
   .grid-main > .col,.clients-layout > .col,.plants-layout > .col{ display:contents; }
   .clients-layout{ display:contents; }
-  #tab-clients{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
+  #tab-clients{ display:flex; flex-wrap:wrap; align-content:flex-start; gap:16px; }
   #tab-clients > .clients-dashboard-extras{ display:contents; }
   #tab-clients > .clients-layout{ display:contents; }
   #tab-clients .dashboard-widget{ height:var(--dashboard-height,320px); }
   #tab-clients .dashboard-widget[data-dashboard-widget="today"]{ --dashboard-width:12; }
+  #tab-clients .dashboard-widget{
+    grid-column:auto;
+    flex:0 0 min(var(--dashboard-window-width,calc((100% - 32px) / 3)),100%);
+    width:min(var(--dashboard-window-width,calc((100% - 32px) / 3)),100%);
+    max-width:100%;
+  }
+  #tab-clients .dashboard-widget[data-dashboard-widget="today"]{
+    --dashboard-window-width:100%;
+  }
+  #tab-clients .card[data-window-id]:not(.dashboard-widget){
+    grid-column:auto !important;
+    flex:0 0 min(var(--window-width,var(--client-window-default-width,calc((100% - 16px) / 2))),100%);
+    width:min(var(--window-width,var(--client-window-default-width,calc((100% - 16px) / 2))),100%) !important;
+    min-width:min(240px,100%) !important;
+    max-width:100%;
+  }
+  #tab-clients .dashboard-widget,
+  #tab-clients .card[data-window-id]:not(.dashboard-widget){ order:var(--client-window-order,0); }
+  #tab-clients .card[data-window-id].collapsed:not(.dashboard-widget),
+  #tab-clients .dashboard-widget.collapsed{
+    flex:0 0 auto !important;
+    width:max-content !important;
+    min-width:44px !important;
+    max-width:220px !important;
+  }
   .notebook-layout{ display:contents; }
   #tab-diary{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
   #tab-diary > .card[data-window-id]{ grid-column:span var(--window-columns,12); }
@@ -168,6 +193,7 @@
   #tab-diary [data-card="diary-notes"]{ --window-columns:9; }
   #tab-board{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
   #tab-board > .board-toolbar,#tab-board > #board-view,#tab-board > #calendar-view,#tab-board > #history-view{ grid-column:1 / -1; }
+  #tab-board > .board-toolbar{ position:relative; z-index:5; }
   #tab-board .history-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
   #tab-board .history-layout > .card[data-window-id]{ --window-columns:6; }
   #tab-board .calendar-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
@@ -185,6 +211,7 @@
   @media(max-width:1000px){ .dashboard-widget{ grid-column:span var(--dashboard-width,4); } }
   @media(max-width:700px){
     .dashboard-widget{ grid-column:span 12 !important; }
+    #tab-clients{ --client-window-default-width:100%; }
     #tab-diary [data-card="diary-folders"],#tab-diary [data-card="diary-notes"]{ grid-column:span 12 !important; }
     #tab-board .history-layout > .card[data-window-id]{ grid-column:span 12 !important; }
     #tab-board .calendar-layout > .calendar-sidebar,#tab-board .calendar-layout > .calendar-main{ grid-column:span 12; }
@@ -1657,13 +1684,17 @@
     ids.forEach(function(id){ if(order.indexOf(id) === -1) order.push(id); });
     var widths = {};
     var heights = {};
+    var pixelWidths = {};
     ids.forEach(function(id){
       var width = source.widths && Number(source.widths[id]);
       var height = source.heights && Number(source.heights[id]);
+      var pixelWidth = source.pixelWidths && source.pixelWidths[id];
       widths[id] = isFinite(width) ? Math.max(3, Math.min(12, Math.round(width))) : defaultWidths[id];
-      heights[id] = isFinite(height) ? Math.max(180, Math.min(600, Math.round(height / 40) * 40)) : defaultHeights[id];
+      heights[id] = isFinite(height) ? Math.max(180, Math.min(1000, Math.round(height))) : defaultHeights[id];
+      pixelWidths[id] = pixelWidth !== null && typeof pixelWidth !== "undefined" && isFinite(Number(pixelWidth))
+        ? Math.max(240, Math.min(3000, Math.round(Number(pixelWidth)))) : null;
     });
-    return { order:order, widths:widths, heights:heights };
+    return { order:order, widths:widths, heights:heights, pixelWidths:pixelWidths };
   }
 
   function normalizeTabOrder(order){
@@ -1936,6 +1967,7 @@
   function applyTabWindowLayout(tab){
     var panel = document.getElementById("tab-" + tab);
     if(!panel) return;
+    if(tab === "clients") applyDashboardLayout();
     if(tab === "objectives") applySavedCardOrder();
     else if(tab === "clients") applySavedClientsCardOrder();
     else if(tab === "plants") applySavedPlantsCardOrder();
@@ -2570,24 +2602,37 @@
     state.dashboardLayout = normalizeDashboardLayout(state.dashboardLayout);
     var container = document.querySelector(".clients-dashboard-extras");
     if(!container) return;
-    state.dashboardLayout.order.forEach(function(id){
+    var panel = document.getElementById("tab-clients");
+    var availableWidth = panel ? panel.clientWidth : 0;
+    var gap = panel ? (parseFloat(window.getComputedStyle(panel).columnGap) || 0) : 0;
+    var trackWidth = availableWidth > 0 ? (availableWidth - gap * 11) / 12 : 0;
+    state.dashboardLayout.order.forEach(function(id,index){
       var widget = container.querySelector('[data-dashboard-widget="' + id + '"]');
       if(!widget) return;
       widget.style.setProperty("--dashboard-width", state.dashboardLayout.widths[id]);
       widget.style.setProperty("--dashboard-height", state.dashboardLayout.heights[id] + "px");
+      widget.style.order = String(index);
+      if(availableWidth > 0){
+        var width = state.dashboardLayout.pixelWidths[id];
+        if(width === null || typeof width === "undefined" || !isFinite(width)){
+          width = window.innerWidth <= 700
+            ? availableWidth
+            : trackWidth * state.dashboardLayout.widths[id] + gap * (state.dashboardLayout.widths[id] - 1);
+        }
+        widget.style.setProperty("--dashboard-window-width", Math.max(1,Math.min(availableWidth,width)) + "px");
+      }
       container.appendChild(widget);
     });
   }
+  window.addEventListener("resize",applyDashboardLayout);
 
   function saveDashboardLayout(){
     var container = document.querySelector(".clients-dashboard-extras");
     if(!container) return;
-    state.dashboardLayout.order = Array.prototype.map.call(
-      Array.prototype.slice.call(container.querySelectorAll("[data-dashboard-widget]")).sort(function(a,b){
-        return (parseInt(a.style.order,10) || 0) - (parseInt(b.style.order,10) || 0);
-      }),
-      function(widget){ return widget.dataset.dashboardWidget; }
-    );
+    state.dashboardLayout.order = Array.prototype.map.call(container.querySelectorAll("[data-dashboard-widget]"),function(widget,index){
+      widget.style.order = String(index);
+      return widget.dataset.dashboardWidget;
+    });
     saveState();
   }
 
@@ -2683,7 +2728,6 @@
           startY:event.clientY,
           startWidth:rect.width,
           startHeight:rect.height,
-          width:state.dashboardLayout.widths[widget.dataset.dashboardWidget],
           resized:false
         };
         widget.classList.add("resizing");
@@ -2697,15 +2741,12 @@
       resize.resized = true;
       var deltaX = event.clientX - resize.startX;
       var deltaY = event.clientY - resize.startY;
-      if(window.innerWidth > 700){
-        var styles = window.getComputedStyle(container);
-        var gap = parseFloat(styles.columnGap) || 0;
-        var trackWidth = (container.clientWidth - gap * 11) / 12;
-        var nextWidth = Math.max(3, Math.min(12, Math.round((resize.startWidth + deltaX + gap) / (trackWidth + gap))));
-        state.dashboardLayout.widths[resize.widget.dataset.dashboardWidget] = nextWidth;
-        resize.widget.style.setProperty("--dashboard-width", nextWidth);
-      }
-      var nextHeight = Math.max(180, Math.min(1000, Math.round((resize.startHeight + deltaY) / 20) * 20));
+      var panel = document.getElementById("tab-clients");
+      var maxWidth = panel ? panel.clientWidth : resize.startWidth + deltaX;
+      var nextWidth = Math.max(Math.min(240,maxWidth),Math.min(maxWidth,Math.round(resize.startWidth + deltaX)));
+      state.dashboardLayout.pixelWidths[resize.widget.dataset.dashboardWidget] = nextWidth;
+      resize.widget.style.setProperty("--dashboard-window-width", nextWidth + "px");
+      var nextHeight = Math.max(180, Math.min(1000, Math.round(resize.startHeight + deltaY)));
       state.dashboardLayout.heights[resize.widget.dataset.dashboardWidget] = nextHeight;
       resize.widget.style.setProperty("--dashboard-height", nextHeight + "px");
       event.preventDefault();
@@ -4826,7 +4867,9 @@
     if(group === "board-history") return Array.prototype.slice.call(document.querySelectorAll("#history-view .card[data-window-id]"));
     var panel = document.getElementById("tab-" + group);
     if(!panel) return [];
-    return Array.prototype.slice.call(panel.querySelectorAll(".card[data-window-id]"));
+    return Array.prototype.slice.call(panel.querySelectorAll(".card[data-window-id]")).filter(function(node){
+      return node.dataset.windowGroup === group;
+    });
   }
 
   function groupOrderFromDom(group){
@@ -4850,7 +4893,10 @@
     state.windowOrder[group] = order;
     order.forEach(function(id,index){
       var node = nodes.find(function(item){ return windowIdFor(item) === id; });
-      if(node) node.style.order = String(index);
+      if(node){
+        var dashboardOffset = group === "clients" ? windowGroupNodes("dashboard").length : 0;
+        node.style.order = String(index + dashboardOffset);
+      }
     });
   }
 
@@ -4937,9 +4983,16 @@
     if(isBoardList){
       if(saved && isFinite(Number(saved.width))) node.style.setProperty("--window-width",Math.max(220,Math.min(900,Math.round(Number(saved.width)))) + "px");
       else node.style.removeProperty("--window-width");
+    } else if(node.dataset.windowGroup === "clients"){
+      if(saved && isFinite(Number(saved.width))){
+        node.style.setProperty("--window-width",Math.max(240,Math.min(3000,Math.round(Number(saved.width)))) + "px");
+      } else {
+        node.style.removeProperty("--window-width");
+      }
     }
     if(saved && isFinite(Number(saved.height))){
-      var maxHeight = node.dataset.card === "categories-manager" ? 720 : 1200;
+      var maxHeight = node.dataset.card === "categories-manager" ? 720
+        : node.dataset.windowGroup === "clients" ? 3000 : 1200;
       node.style.setProperty("--window-height",Math.max(isBoardList ? 220 : 160,Math.min(maxHeight,Math.round(Number(saved.height)))) + "px");
     } else if(node.dataset.card === "categories-manager"){
       node.style.setProperty("--window-height","560px");
@@ -5008,9 +5061,10 @@
           var order = groupOrderFromDom(drag.group).filter(function(id){ return id !== windowIdFor(drag.node); });
           var targetIndex = order.indexOf(windowIdFor(nearest));
           order.splice(targetIndex + (before ? 0 : 1),0,windowIdFor(drag.node));
+          var dashboardOffset = drag.group === "clients" ? windowGroupNodes("dashboard").length : 0;
           order.forEach(function(id,index){
             var item = windowGroupNodes(drag.group).find(function(candidate){ return windowIdFor(candidate) === id; });
-            if(item) item.style.order = String(index);
+            if(item) item.style.order = String(index + dashboardOffset);
           });
           drag.moved = true;
           event.preventDefault();
@@ -5024,13 +5078,21 @@
         || resize.node.closest(".plants-layout") || resize.node.closest("#tab-diary") || resize.node.closest(".history-layout");
       if(!root) return;
       var minHeight = resize.node.classList.contains("board-list") ? 220 : 160;
-      var maxHeight = resize.node.dataset.card === "categories-manager" ? 720 : 1200;
-      var nextHeight = Math.max(minHeight,Math.min(maxHeight,Math.round((resize.height + event.clientY-resize.startY)/20)*20));
+      var isClientsWindow = resize.node.dataset.windowGroup === "clients";
+      var maxHeight = resize.node.dataset.card === "categories-manager" ? 720
+        : isClientsWindow ? 3000 : 1200;
+      var nextHeight = Math.max(minHeight,Math.min(maxHeight,Math.round(resize.height + event.clientY-resize.startY)));
       if(resize.node.classList.contains("board-list")){
         var nextWidth = Math.max(220,Math.min(900,Math.round(resize.width + event.clientX-resize.startX)));
         resize.node.style.setProperty("--window-width",nextWidth+"px");
         resize.current = { width:nextWidth, height:nextHeight };
+      } else if(isClientsWindow){
+        var maxWidth = root.clientWidth;
+        var nextWidth = Math.max(Math.min(240,maxWidth),Math.min(maxWidth,Math.round(resize.width + event.clientX-resize.startX)));
+        resize.node.style.setProperty("--window-width",nextWidth+"px");
+        resize.current = { width:nextWidth, height:nextHeight };
       } else {
+        nextHeight = Math.round(nextHeight/20)*20;
         var styles = window.getComputedStyle(root);
         var gap = parseFloat(styles.columnGap) || 0;
         var columns = 12;
@@ -5084,6 +5146,7 @@
     saveState();
   }
   function applySavedCardOrder(){
+    if(state.windowOrder && Array.isArray(state.windowOrder.objectives)) return;
     var order = state.cardOrder;
     if(!order) return;
     ["left","right"].forEach(function(side){
@@ -5103,6 +5166,7 @@
     saveState();
   }
   function applySavedClientsCardOrder(){
+    if(state.windowOrder && Array.isArray(state.windowOrder.clients)) return;
     var order = state.clientsCardOrder;
     if(!order) return;
     ["left","right"].forEach(function(side){
@@ -5122,6 +5186,7 @@
     saveState();
   }
   function applySavedPlantsCardOrder(){
+    if(state.windowOrder && Array.isArray(state.windowOrder.plants)) return;
     var order = state.plantsCardOrder;
     if(!order) return;
     ["left","right"].forEach(function(side){
