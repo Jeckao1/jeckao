@@ -193,7 +193,7 @@
   #tab-diary [data-card="diary-notes"]{ --window-columns:9; }
   #tab-board{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:16px; }
   #tab-board > .board-toolbar,#tab-board > #board-view,#tab-board > #calendar-view,#tab-board > #history-view{ grid-column:1 / -1; }
-  #tab-board > .board-toolbar{ position:relative; z-index:5; }
+  #tab-board > .board-toolbar{ position:relative; z-index:1000; isolation:isolate; }
   #tab-board .history-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
   #tab-board .history-layout > .card[data-window-id]{ --window-columns:6; }
   #tab-board .calendar-layout{ grid-template-columns:repeat(12,minmax(0,1fr)); }
@@ -963,19 +963,18 @@
     <div id="global-search-results" class="global-search-results" role="listbox" aria-label="Resultados da busca"></div>
   </div>
 
+  <div id="storage-warning" class="storage-warning" style="display:none;">
+    ⚠ Seu navegador não está permitindo salvar dados automaticamente nesta página. Use o botão "Baixar/Copiar backup" com frequência.
+  </div>
+  <div class="backup-bar">
+    <button id="btn-export" type="button" class="btn-ghost">💾 Baixar Backup</button>
+    <button id="btn-import" type="button" class="btn-ghost">📥 Restaurar Backup</button>
+    <span id="save-status" class="save-status">Salvo</span>
+    <span id="backup-reminder" class="backup-reminder" style="display:none;"></span>
+    <button id="btn-zero-xp" type="button" class="btn-ghost" style="margin-left:auto;">🔄 Zerar XP</button>
+  </div>
+
   <div id="tab-objectives" class="tab-panel">
-
-    <div id="storage-warning" class="storage-warning" style="display:none;">
-      ⚠ Seu navegador não está permitindo salvar dados automaticamente nesta página. Use o botão "Baixar/Copiar backup" com frequência.
-    </div>
-
-    <div class="backup-bar">
-      <button id="btn-export" type="button" class="btn-ghost">💾 Baixar Backup</button>
-      <button id="btn-import" type="button" class="btn-ghost">📥 Restaurar Backup</button>
-      <span id="save-status" class="save-status">Salvo</span>
-      <span id="backup-reminder" class="backup-reminder" style="display:none;"></span>
-      <button id="btn-zero-xp" type="button" class="btn-ghost" style="margin-left:auto;">🔄 Zerar XP</button>
-    </div>
 
     <main class="grid-main" id="grid-main-objectives">
 
@@ -4591,11 +4590,15 @@
       String(now.getMinutes()).padStart(2, "0");
     link.href = url;
     link.download = "SucessoApp-backup-" + stamp + ".json";
-    link.style.display = "none";
+    link.style.position = "fixed";
+    link.style.left = "-10000px";
+    link.style.top = "0";
     document.body.appendChild(link);
     link.click();
-    link.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    setTimeout(function(){
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 30000);
     markBackupCreated();
   }
 
