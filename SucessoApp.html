@@ -105,6 +105,8 @@
   .window-layout-resizing{ opacity:0.9; user-select:none; }
   .window-layout-dragging{ opacity:0.7; }
   .card[data-window-id]:not(.dashboard-widget){ grid-column:span var(--window-columns,12); min-width:0 !important; width:100% !important; height:var(--window-height,auto); position:relative; }
+  .card[data-card="categories-manager"]{ display:flex; flex-direction:column; min-height:0; }
+  .card[data-card="categories-manager"] > .card-body{ flex:1 1 auto; min-height:0; overflow:auto; }
   .card[data-window-id].collapsed > :not(.card-head){ display:none !important; }
   .card[data-window-id].collapsed .window-resize-handle{ display:none; }
   .card[data-window-id].collapsed:not(.dashboard-widget){
@@ -339,6 +341,9 @@
     width:100%; max-width:480px; max-height:88vh; overflow-y:auto; transform:translateY(8px); transition:transform .2s;
   }
   .modal-overlay.show .modal-box{ transform:translateY(0); }
+  .modal-title-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .modal-close-btn{ display:flex; align-items:center; justify-content:center; flex:0 0 32px; width:32px; height:32px; border:1px solid var(--line); border-radius:8px; color:var(--dim); font-size:1.2rem; line-height:1; }
+  .modal-close-btn:hover{ border-color:var(--cyan); color:var(--cyan); }
   .modal-actions{ display:flex; gap:10px; margin-top:18px; }
   .btn-secondary{ flex:1; padding:11px; border-radius:8px; border:1px solid var(--line); background:transparent; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.9rem; color:var(--dim); transition:border-color .15s, color .15s; }
   .btn-secondary:hover{ border-color:var(--dim); color:var(--text); }
@@ -797,8 +802,11 @@
 </div>
 
 <div id="client-info-modal" class="modal-overlay">
-  <div class="modal-box text-center">
-    <h2>Ficha da Cliente</h2>
+  <div class="modal-box text-center" role="dialog" aria-modal="true" aria-labelledby="client-info-title">
+    <div class="modal-title-row">
+      <h2 id="client-info-title">Ficha da Cliente</h2>
+      <button id="btn-client-info-dismiss" class="modal-close-btn" type="button" aria-label="Fechar ficha da cliente" title="Fechar">×</button>
+    </div>
     <div id="client-info-content" class="my-4 text-left space-y-2"></div>
     <div class="modal-actions"><button id="btn-client-info-close" type="button" class="btn-submit" style="flex:1;">Fechar</button></div>
   </div>
@@ -1853,7 +1861,7 @@
      "notebook-format-bold","notebook-format-size","notebook-format-color",
      "btn-notebook-save-note","btn-notebook-cancel-edit","notebook-notes","notebook-empty-notes",
      "client-search-input","client-category-select","btn-new-category",
-     "client-info-modal","client-info-content","btn-client-info-close",
+     "client-info-modal","client-info-content","btn-client-info-close","btn-client-info-dismiss",
      "client-report-modal","client-report-modal-title","client-report-modal-list","btn-client-report-close",
      "plant-history-modal","plant-history-title","plant-history-content","btn-plant-history-close","card-color-input",
      "clients-col-left","clients-col-right",
@@ -1917,7 +1925,21 @@
     if(tab === "clients") renderClientsTab();
     if(tab === "plants") renderPlantsTab();
     if(!skipSave){ state.activeTab = tab; saveState(); }
+    applyTabWindowLayout(tab);
     applyWindowVisibility(tab);
+    requestAnimationFrame(function(){
+      var panel = document.getElementById("tab-" + tab);
+      if(panel && panel.style.display !== "none") applyTabWindowLayout(tab);
+    });
+  }
+
+  function applyTabWindowLayout(tab){
+    var panel = document.getElementById("tab-" + tab);
+    if(!panel) return;
+    if(tab === "objectives") applySavedCardOrder();
+    else if(tab === "clients") applySavedClientsCardOrder();
+    else if(tab === "plants") applySavedPlantsCardOrder();
+    initResizableWindows(panel);
   }
 
   el["tab-btn-objectives"].addEventListener("click", function(){ if(Date.now() >= tabClickSuppressionUntil) switchTab("objectives"); });
@@ -4833,8 +4855,11 @@
   }
 
   function prepareWindowNode(node){
-    if(node.dataset.windowControlsReady === "true") return;
     var isBoardList = node.classList.contains("board-list");
+    if(node.dataset.windowControlsReady === "true"){
+      applyWindowDimensions(node,isBoardList);
+      return;
+    }
     var isDashboard = !!node.dataset.dashboardWidget;
     if(isBoardList){
       node.dataset.windowId = "board-list:" + node.dataset.listId;
@@ -4883,17 +4908,6 @@
     });
 
     if(!isDashboard){
-      var defaultColumns = isBoardList ? 3
-        : node.dataset.windowDefaultColumns ? Number(node.dataset.windowDefaultColumns)
-        : node.dataset.card === "diary-folders" ? 3
-        : node.dataset.card === "diary-notes" ? 9
-        : 6;
-      var saved = state.windowLayouts[node.dataset.windowId];
-      if(saved && isFinite(Number(saved.columns))) node.style.setProperty("--window-columns",Math.max(1,Math.min(12,Math.round(Number(saved.columns)))));
-      else node.style.setProperty("--window-columns",defaultColumns);
-      if(isBoardList && saved && isFinite(Number(saved.width))) node.style.setProperty("--window-width",Math.max(220,Math.min(900,Math.round(Number(saved.width)))) + "px");
-      if(saved && isFinite(Number(saved.height))) node.style.setProperty("--window-height",Math.max(isBoardList ? 220 : 160,Math.min(1200,Math.round(Number(saved.height)))) + "px");
-
       if(!node.querySelector(":scope > .window-resize-handle")){
         var resize = document.createElement("button");
         resize.type = "button";
@@ -4904,9 +4918,34 @@
         node.appendChild(resize);
       }
     }
+    applyWindowDimensions(node,isBoardList);
     node.dataset.windowControlsReady = "true";
     node.classList.toggle("collapsed",!!state.uiCollapsed[collapseKey]);
     updateWindowMinimizeButton(node,minimize,!!state.uiCollapsed[collapseKey]);
+  }
+
+  function applyWindowDimensions(node,isBoardList){
+    if(node.dataset.dashboardWidget) return;
+    var saved = state.windowLayouts[node.dataset.windowId];
+    var defaultColumns = isBoardList ? 3
+      : node.dataset.windowDefaultColumns ? Number(node.dataset.windowDefaultColumns)
+      : node.dataset.card === "diary-folders" ? 3
+      : node.dataset.card === "diary-notes" ? 9
+      : 6;
+    if(saved && isFinite(Number(saved.columns))) node.style.setProperty("--window-columns",Math.max(1,Math.min(12,Math.round(Number(saved.columns)))));
+    else node.style.setProperty("--window-columns",defaultColumns);
+    if(isBoardList){
+      if(saved && isFinite(Number(saved.width))) node.style.setProperty("--window-width",Math.max(220,Math.min(900,Math.round(Number(saved.width)))) + "px");
+      else node.style.removeProperty("--window-width");
+    }
+    if(saved && isFinite(Number(saved.height))){
+      var maxHeight = node.dataset.card === "categories-manager" ? 720 : 1200;
+      node.style.setProperty("--window-height",Math.max(isBoardList ? 220 : 160,Math.min(maxHeight,Math.round(Number(saved.height)))) + "px");
+    } else if(node.dataset.card === "categories-manager"){
+      node.style.setProperty("--window-height","560px");
+    } else {
+      node.style.removeProperty("--window-height");
+    }
   }
 
   function initResizableWindows(root){
@@ -4985,7 +5024,8 @@
         || resize.node.closest(".plants-layout") || resize.node.closest("#tab-diary") || resize.node.closest(".history-layout");
       if(!root) return;
       var minHeight = resize.node.classList.contains("board-list") ? 220 : 160;
-      var nextHeight = Math.max(minHeight,Math.min(1200,Math.round((resize.height + event.clientY-resize.startY)/20)*20));
+      var maxHeight = resize.node.dataset.card === "categories-manager" ? 720 : 1200;
+      var nextHeight = Math.max(minHeight,Math.min(maxHeight,Math.round((resize.height + event.clientY-resize.startY)/20)*20));
       if(resize.node.classList.contains("board-list")){
         var nextWidth = Math.max(220,Math.min(900,Math.round(resize.width + event.clientX-resize.startX)));
         resize.node.style.setProperty("--window-width",nextWidth+"px");
@@ -6299,8 +6339,10 @@
     if(whatsappLink) content.appendChild(whatsappLink);
     el["client-info-modal"].classList.add("show");
   }
-  el["btn-client-info-close"].addEventListener("click", function(){ el["client-info-modal"].classList.remove("show"); });
-  el["client-info-modal"].addEventListener("click", function(e){ if(e.target === el["client-info-modal"]) el["client-info-modal"].classList.remove("show"); });
+  function closeClientInfoModal(){ el["client-info-modal"].classList.remove("show"); }
+  el["btn-client-info-close"].addEventListener("click", closeClientInfoModal);
+  el["btn-client-info-dismiss"].addEventListener("click", closeClientInfoModal);
+  el["client-info-modal"].addEventListener("click", function(e){ if(e.target === el["client-info-modal"]) closeClientInfoModal(); });
 
   function renderClientRowHtml(client, isFirst, isLast){
     var row = document.createElement("div");
