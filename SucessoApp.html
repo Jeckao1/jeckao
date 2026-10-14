@@ -104,6 +104,7 @@
   .window-resize-handle:hover,.window-resize-handle:focus-visible{ border-color:var(--cyan); background:var(--panel); color:var(--cyan); }
   .window-layout-resizing{ opacity:0.9; user-select:none; }
   .window-layout-dragging{ opacity:0.7; }
+  .window-layout-drop-target{ outline:2px solid var(--cyan); outline-offset:3px; }
   .card[data-window-id]:not(.dashboard-widget){ grid-column:span var(--window-columns,12); min-width:0 !important; width:100% !important; height:var(--window-height,auto); position:relative; }
   .card[data-card="categories-manager"]{ display:flex; flex-direction:column; min-height:0; }
   .card[data-card="categories-manager"] > .card-body{ flex:1 1 auto; min-height:0; overflow:auto; }
@@ -2667,8 +2668,18 @@
       handle.addEventListener("pointerdown", function(event){
         var widget = handle.closest("[data-dashboard-widget]");
         if(!widget || event.button !== 0) return;
-        dashboardPointer = { widget:widget, pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, moved:false };
+        dashboardPointer = {
+          widget:widget,
+          pointerId:event.pointerId,
+          startX:event.clientX,
+          startY:event.clientY,
+          moved:false,
+          startOrder:Array.prototype.map.call(container.querySelectorAll("[data-dashboard-widget]"),function(item){ return item.dataset.dashboardWidget; }),
+          target:null
+        };
+        widget.classList.add("dragging");
         if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+        event.preventDefault();
       });
     });
     function moveDashboardWidgetAt(clientX, clientY){
@@ -2688,28 +2699,39 @@
         var distance = dx * dx + dy * dy;
         if(distance < nearestDistance){ nearest = widget; nearestDistance = distance; }
       });
-      var rect = nearest.getBoundingClientRect();
-      var xOffset = (clientX - (rect.left + rect.width / 2)) / Math.max(rect.width, 1);
-      var yOffset = (clientY - (rect.top + rect.height / 2)) / Math.max(rect.height, 1);
-      var insertAfter = Math.abs(xOffset) > Math.abs(yOffset) ? xOffset > 0 : yOffset > 0;
-      if(insertAfter) container.insertBefore(draggedWidget, nearest.nextSibling);
-      else container.insertBefore(draggedWidget, nearest);
+      if(dashboardPointer.target && dashboardPointer.target !== nearest){
+        dashboardPointer.target.classList.remove("window-layout-drop-target");
+      }
+      dashboardPointer.target = nearest;
+      nearest.classList.add("window-layout-drop-target");
     }
     document.addEventListener("pointermove", function(event){
       if(!dashboardPointer || event.pointerId !== dashboardPointer.pointerId) return;
       var distance = Math.hypot(event.clientX - dashboardPointer.startX, event.clientY - dashboardPointer.startY);
       if(!dashboardPointer.moved && distance < 6) return;
       dashboardPointer.moved = true;
-      dashboardPointer.widget.classList.add("dragging");
       event.preventDefault();
       moveDashboardWidgetAt(event.clientX, event.clientY);
     });
     function finishDashboardPointer(event){
       if(!dashboardPointer || event.pointerId !== dashboardPointer.pointerId) return;
-      var moved = dashboardPointer.moved;
-      dashboardPointer.widget.classList.remove("dragging");
+      var drag = dashboardPointer;
       dashboardPointer = null;
-      if(moved) saveDashboardLayout();
+      drag.widget.classList.remove("dragging");
+      if(drag.target) drag.target.classList.remove("window-layout-drop-target");
+      if(event.type === "pointercancel" || !drag.moved || !drag.target) return;
+      var order = drag.startOrder.slice();
+      var from = order.indexOf(drag.widget.dataset.dashboardWidget);
+      var to = order.indexOf(drag.target.dataset.dashboardWidget);
+      if(from === -1 || to === -1 || from === to) return;
+      var movedId = order[from];
+      order[from] = order[to];
+      order[to] = movedId;
+      order.forEach(function(id){
+        var widget = container.querySelector('[data-dashboard-widget="' + id + '"]');
+        if(widget) container.appendChild(widget);
+      });
+      saveDashboardLayout();
     }
     document.addEventListener("pointerup", finishDashboardPointer);
     document.addEventListener("pointercancel", finishDashboardPointer);
@@ -5018,7 +5040,16 @@
         if(node && node.classList.contains("dashboard-widget")) return;
         var group = node && node.dataset.windowGroup;
         if(!node || !group) return;
-        windowPointerDrag = { node:node, group:group, pointerId:event.pointerId, moved:false };
+        windowPointerDrag = {
+          node:node,
+          group:group,
+          pointerId:event.pointerId,
+          startX:event.clientX,
+          startY:event.clientY,
+          moved:false,
+          startOrder:groupOrderFromDom(group),
+          target:null
+        };
         node.classList.add("window-layout-dragging");
         if(handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
         event.preventDefault();
@@ -5042,37 +5073,27 @@
 
   var windowPointerDrag = null;
   var windowPointerResize = null;
+  function nearestWindowAt(nodes,source,clientX,clientY){
+    var nearest = null, nearestDistance = Infinity;
+    nodes.forEach(function(node){
+      if(node === source || !node.getClientRects().length) return;
+      var rect = node.getBoundingClientRect();
+      var dx = (clientX - (rect.left + rect.width/2)) / Math.max(rect.width,1);
+      var dy = (clientY - (rect.top + rect.height/2)) / Math.max(rect.height,1);
+      var distance = dx*dx + dy*dy;
+      if(distance < nearestDistance){ nearest = node; nearestDistance = distance; }
+    });
+    return nearest;
+  }
   document.addEventListener("pointermove",function(event){
     if(windowPointerDrag && event.pointerId === windowPointerDrag.pointerId){
       var drag = windowPointerDrag;
-      var candidates = windowGroupNodes(drag.group).filter(function(node){ return node !== drag.node && node.getClientRects().length; });
-      if(candidates.length){
-        var nearest = null, nearestDistance = Infinity;
-        candidates.forEach(function(candidate){
-          var rect = candidate.getBoundingClientRect();
-          var dx = (event.clientX - (rect.left + rect.width/2)) / Math.max(rect.width,1);
-          var dy = (event.clientY - (rect.top + rect.height/2)) / Math.max(rect.height,1);
-          var distance = dx*dx + dy*dy;
-          if(distance < nearestDistance){ nearest = candidate; nearestDistance = distance; }
-        });
-        if(nearest){
-          var rect = nearest.getBoundingClientRect();
-          var before = Math.abs((event.clientX - (rect.left+rect.width/2))/Math.max(rect.width,1))
-            > Math.abs((event.clientY - (rect.top+rect.height/2))/Math.max(rect.height,1))
-            ? event.clientX < rect.left+rect.width/2
-            : event.clientY < rect.top+rect.height/2;
-          var order = groupOrderFromDom(drag.group).filter(function(id){ return id !== windowIdFor(drag.node); });
-          var targetIndex = order.indexOf(windowIdFor(nearest));
-          order.splice(targetIndex + (before ? 0 : 1),0,windowIdFor(drag.node));
-          var dashboardOffset = drag.group === "clients" ? windowGroupNodes("dashboard").length : 0;
-          order.forEach(function(id,index){
-            var item = windowGroupNodes(drag.group).find(function(candidate){ return windowIdFor(candidate) === id; });
-            if(item) item.style.order = String(index + dashboardOffset);
-          });
-          drag.moved = true;
-          event.preventDefault();
-        }
-      }
+      var nearest = nearestWindowAt(windowGroupNodes(drag.group),drag.node,event.clientX,event.clientY);
+      if(drag.target && drag.target !== nearest) drag.target.classList.remove("window-layout-drop-target");
+      drag.target = nearest;
+      if(nearest) nearest.classList.add("window-layout-drop-target");
+      drag.moved = drag.moved || Math.hypot(event.clientX - drag.startX,event.clientY - drag.startY) > 6;
+      if(drag.moved) event.preventDefault();
     }
     if(windowPointerResize && event.pointerId === windowPointerResize.pointerId){
       var resize = windowPointerResize;
@@ -5114,9 +5135,23 @@
       var drag = windowPointerDrag;
       drag.node.classList.remove("window-layout-dragging");
       windowPointerDrag = null;
-      if(drag.moved){
-        state.windowOrder[drag.group] = groupOrderFromDom(drag.group);
-        saveState();
+      if(drag.target) drag.target.classList.remove("window-layout-drop-target");
+      if(event.type !== "pointercancel" && drag.moved && drag.target){
+        var order = drag.startOrder.slice();
+        var from = order.indexOf(windowIdFor(drag.node));
+        var to = order.indexOf(windowIdFor(drag.target));
+        if(from !== -1 && to !== -1 && from !== to){
+          var movedId = order[from];
+          order[from] = order[to];
+          order[to] = movedId;
+          var dashboardOffset = drag.group === "clients" ? windowGroupNodes("dashboard").length : 0;
+          order.forEach(function(id,index){
+            var item = windowGroupNodes(drag.group).find(function(candidate){ return windowIdFor(candidate) === id; });
+            if(item) item.style.order = String(index + dashboardOffset);
+          });
+          state.windowOrder[drag.group] = order;
+          saveState();
+        }
       }
     }
     if(windowPointerResize && event.pointerId === windowPointerResize.pointerId){
