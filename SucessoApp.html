@@ -219,6 +219,7 @@
     .window-resize-handle,.dashboard-widget-resize{ width:34px; height:34px; font-size:1.1rem; }
   }
   .dashboard-extra-list{ display:flex; flex-direction:column; gap:6px; max-height:245px; overflow:auto; }
+  .dashboard-tasks-intro{ color:var(--dim); font-size:0.72rem; margin:-4px 0 8px; }
   .dashboard-extra-item{ display:flex; align-items:center; justify-content:space-between; width:100%; gap:10px; padding:7px 9px; background:rgba(255,255,255,0.025); border:1px solid var(--line-soft); border-radius:7px; text-align:left; }
   .dashboard-extra-item:hover{ border-color:var(--cyan); }
   .dashboard-extra-item strong{ display:block; font-size:0.76rem; overflow-wrap:anywhere; }
@@ -1239,6 +1240,11 @@
         <div class="card-head"><h2>⏰ Agenda próxima</h2></div>
         <div id="upcoming-reminders" class="dashboard-extra-list"></div>
       </section>
+      <section class="card dashboard-widget" data-dashboard-widget="tasks" data-visibility-label="Tarefas próximas">
+        <div class="card-head"><h2>🗓️ Tarefas próximas</h2></div>
+        <p class="dashboard-tasks-intro">Prazos, entregas e compromissos futuros cadastrados no app.</p>
+        <div id="upcoming-tasks" class="dashboard-extra-list"></div>
+      </section>
     </div>
     <main class="clients-layout" id="grid-main-clients">
 
@@ -1673,9 +1679,9 @@
   }
 
   function normalizeDashboardLayout(layout){
-    var ids = ["today","summary","birthdays","agenda"];
-    var defaultWidths = { today:12, summary:4, birthdays:4, agenda:4 };
-    var defaultHeights = { today:320, summary:240, agenda:360, birthdays:360 };
+    var ids = ["today","summary","birthdays","agenda","tasks"];
+    var defaultWidths = { today:12, summary:4, birthdays:4, agenda:4, tasks:4 };
+    var defaultHeights = { today:320, summary:240, agenda:360, birthdays:360, tasks:360 };
     var source = layout && typeof layout === "object" ? layout : {};
     var order = Array.isArray(source.order) ? source.order.filter(function(id, index, items){
       return ids.indexOf(id) !== -1 && items.indexOf(id) === index;
@@ -1861,7 +1867,7 @@
      "edit-confirm-single","edit-confirm-dual",
      "btn-edit-save","btn-edit-cancel","habit-calendar","empty-calendar",
      "storage-warning","btn-export","btn-import","save-status","backup-reminder","btn-zero-xp",
-     "global-search-input","global-search-results","weekly-summary","today-agenda-content","upcoming-reminders","objectives-upcoming-birthdays","client-report-stats","client-report-categories",
+     "global-search-input","global-search-results","weekly-summary","today-agenda-content","upcoming-reminders","upcoming-tasks","objectives-upcoming-birthdays","client-report-stats","client-report-categories",
      "backup-modal","backup-modal-title","backup-modal-desc","backup-textarea","backup-preview",
      "btn-backup-copy","btn-backup-download","btn-backup-select-file","backup-file-input","btn-backup-restore","btn-backup-close",
      "pillar-modal","pillar-manage-list","new-pillar-name","new-pillar-color","pillar-form-label",
@@ -4112,17 +4118,19 @@
     return date;
   }
 
-  function collectUpcomingReminders(includeAllOverdue){
+  function collectUpcomingReminders(includeAllOverdue,includeAllUpcoming){
     var reminders = [];
     var today = new Date();
     today.setHours(0,0,0,0);
-    var cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (includeAllOverdue ? 0 : 7));
+    var cutoff = includeAllUpcoming
+      ? new Date(8640000000000000)
+      : new Date(today.getFullYear(), today.getMonth(), today.getDate() + (includeAllOverdue ? 0 : 7));
     function addReminder(title, type, date, onOpen, overdue, onComplete){
       if(!date) return;
       var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if(day > cutoff || (day < today && !overdue)) return;
       var overdueCutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
-      if(overdue && day < overdueCutoff && !includeAllOverdue) return;
+      if(overdue && day < overdueCutoff && !includeAllOverdue && !includeAllUpcoming) return;
       reminders.push({
         title:title,
         type:type,
@@ -4237,12 +4245,31 @@
   function renderUpcomingReminders(){
     var reminders = collectUpcomingReminders(false);
     el["upcoming-reminders"].innerHTML = "";
+    renderUpcomingTasks();
     if(!reminders.length){
       el["upcoming-reminders"].innerHTML = '<p class="dashboard-extra-empty">Nenhum prazo, entrega, pós-venda ou evento nos próximos 7 dias.</p>';
       return;
     }
     reminders.slice(0,12).forEach(function(reminder){
       renderReminderItem(reminder, el["upcoming-reminders"]);
+    });
+  }
+
+  function renderUpcomingTasks(){
+    var container = el["upcoming-tasks"];
+    if(!container) return;
+    var reminders = collectUpcomingReminders(true,true);
+    reminders.sort(function(a,b){
+      if(a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+      return a.overdue ? b.date - a.date : a.date - b.date;
+    });
+    container.innerHTML = "";
+    if(!reminders.length){
+      container.innerHTML = '<p class="dashboard-extra-empty">Nenhuma tarefa com prazo ou compromisso futuro cadastrado.</p>';
+      return;
+    }
+    reminders.forEach(function(reminder){
+      renderReminderItem(reminder,container);
     });
   }
 
